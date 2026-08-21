@@ -139,10 +139,6 @@ table tr:last-child td{border-bottom:none;}
 .modal-overlay.is-active{display:flex;}
 .modal-box{background:#fff;border-radius:14px;max-width:460px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;}
 .modal-box h3{margin-bottom:14px;}
-.modal-box-wide{max-width:680px;padding:22px 22px 10px 22px;display:flex;flex-direction:column;max-height:92vh;}
-.kobo-embed-wrap{flex:1;min-height:0;border-radius:10px;overflow:hidden;border:1px solid #e3e9eb;background:#f6f8f9;}
-.kobo-embed-frame{width:100%;height:72vh;border:0;display:block;}
-@media(max-width:600px){.modal-box-wide{max-width:100%;} .kobo-embed-frame{height:78vh;}}
 .modal-close{float:right;background:none;font-size:18px;color:var(--muted);}
 
 /* mini map (SVG) */
@@ -415,7 +411,7 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
       <!-- PETS (Pet Ownership) -->
       <section class="warga-page" data-warga-page="pets">
         <div class="section-title">Hewan Saya (Pet Ownership)</div>
-        <button class="btn block" data-open-modal="add-pet">+ Daftarkan Hewan Baru</button>
+        <a class="btn block" href="https://ee.kobotoolbox.org/x/xXzrpDeU" target="_blank" rel="noopener">+ Daftarkan Hewan Baru</a>
         <div id="w-pets-list" class="stagger-in" style="margin-top:12px;"></div>
       </section>
 
@@ -560,7 +556,7 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
 
     <section class="dash-page" data-kader-page="dogalog">
       <div class="dash-header"><h2>Digital Dogalog</h2><p>Katalog digital anjing per banjar/desa — identifikasi permanen menjawab masalah data hilang di Program Dharma.</p></div>
-      <button class="btn" data-open-modal="add-pet">+ Tambah Anjing/Kucing</button>
+      <a class="btn" href="https://ee.kobotoolbox.org/x/xXzrpDeU" target="_blank" rel="noopener">+ Tambah Anjing/Kucing</a>
       <div class="card" style="margin-top:14px;overflow-x:auto;">
         <table>
           <thead><tr><th>Nama</th><th>Jenis</th><th>Pemilik</th><th>Banjar/Desa</th><th>Status Vaksin</th></tr></thead>
@@ -792,16 +788,6 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
 </div>
 
 <!-- ============ MODALS ============ -->
-<div class="modal-overlay" id="modal-add-pet">
-  <div class="modal-box modal-box-wide">
-    <button class="modal-close" data-close-modal>&times;</button>
-    <h3>Daftarkan Hewan (Pet Ownership)</h3>
-    <div class="kobo-embed-wrap">
-      <iframe src="https://ee.kobotoolbox.org/x/xXzrpDeU" class="kobo-embed-frame" title="Formulir Pendaftaran Hewan RaCon" loading="lazy"></iframe>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-case-detail">
   <div class="modal-box">
     <button class="modal-close" data-close-modal>&times;</button>
