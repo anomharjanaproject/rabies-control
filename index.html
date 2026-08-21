@@ -746,7 +746,13 @@ const KoboClient = (function(){
   }
   function attachmentUrl(record, fileValue){
     if(!record._attachments || !fileValue) return null;
-    const found = record._attachments.find(function(a){ return a.filename && a.filename.indexOf(fileValue) > -1; });
+    const found = record._attachments.find(function(a){
+      // Nilai field asli kadang pakai spasi, sedangkan nama file yang tersimpan
+      // di server sudah disanitasi (spasi -> underscore) -- cek kedua kemungkinan.
+      return a.media_file_basename === fileValue ||
+        (a.filename && a.filename.indexOf(fileValue) > -1) ||
+        (a.filename && a.filename.indexOf(fileValue.replace(/ /g, '_')) > -1);
+    });
     return found ? (found.download_medium_url || found.download_url) : null;
   }
   return { isConfigured, formUrl, fetchSubmissions, attachmentUrl };
@@ -813,6 +819,18 @@ function getRepeatItems(record, groupName){
   const key = Object.keys(record).find(function(k){ return k === groupName || k.indexOf('/'+groupName) > -1; });
   return key ? (record[key] || []) : [];
 }
+function repeatField(item, groupName, fieldName){
+  // Kobo API v2 (JSON mentah) memberi prefix "namagrup/" pada field di dalam repeat
+  // group, berbeda dari ekspor XLS yang tanpa prefix -- coba kedua bentuknya.
+  if(item[groupName + '/' + fieldName] !== undefined) return item[groupName + '/' + fieldName];
+  return item[fieldName];
+}
+function geoFromSubmission(r){
+  if(Array.isArray(r._geolocation) && r._geolocation.length === 2 && r._geolocation[0] !== null){
+    return { lat: Number(r._geolocation[0]), lng: Number(r._geolocation[1]) };
+  }
+  return { lat: null, lng: null };
+}
 function mapVaccineStatus(code){
   if(!code) return '-';
   return code.toLowerCase().indexOf('belum') > -1 ? 'Belum' : 'Tervaksin';
@@ -844,16 +862,20 @@ async function syncPetsFromKobo(){
       const deviceId = r.device_id || null;
       const animals = getRepeatItems(r, 'group_tc5cy37');
       animals.forEach(function(a, idx){
+        const jenisHewan = repeatField(a, 'group_tc5cy37', 'Jenis_Hewan');
+        const jenisKelamin = repeatField(a, 'group_tc5cy37', 'Jenis_Kelamin_Hewan');
+        const statusVaksin = repeatField(a, 'group_tc5cy37', 'Status_Vaksinasi_Rabies');
+        const fotoHewan = repeatField(a, 'group_tc5cy37', 'Foto_Hewan');
         mapped.push({
           id: (r._uuid || String(r._id)) + '-' + idx,
-          name: titleCase(a.Jenis_Hewan) + ' #' + (idx+1),
-          species: titleCase(a.Jenis_Hewan) || '-',
-          sex: a.Jenis_Kelamin_Hewan === 'jantan' ? 'Jantan' : (a.Jenis_Kelamin_Hewan === 'betina' ? 'Betina' : '-'),
+          name: titleCase(jenisHewan) + ' #' + (idx+1),
+          species: titleCase(jenisHewan) || '-',
+          sex: jenisKelamin === 'jantan' ? 'Jantan' : (jenisKelamin === 'betina' ? 'Betina' : '-'),
           ownerName: ownerName,
           kabupaten: kabupaten,
           banjarDesa: banjarDesa,
-          vaccineStatus: mapVaccineStatus(a.Status_Vaksinasi_Rabies),
-          photoUrl: KoboClient.attachmentUrl(r, a.Foto_Hewan),
+          vaccineStatus: mapVaccineStatus(statusVaksin),
+          photoUrl: KoboClient.attachmentUrl(r, fotoHewan),
           deviceId: deviceId,
           createdAt: r._submission_time || Utils.nowISO()
         });
@@ -885,18 +907,18 @@ async function syncCasesFromKobo(){
       if(r.Kondisi_hewan_saat_ini) noteParts.push('Kondisi hewan: ' + r.Kondisi_hewan_saat_ini);
       if(r.Riwayat_vaksinasi_pada_hewan) noteParts.push('Riwayat vaksin hewan: ' + r.Riwayat_vaksinasi_pada_hewan);
       if(r.Tindakan_pertama_yang_sudah_dilakukan) noteParts.push('Tindakan pertama: ' + r.Tindakan_pertama_yang_sudah_dilakukan);
-      const lat = r._Lokasi_GPS_latitude !== undefined && r._Lokasi_GPS_latitude !== null ? Number(r._Lokasi_GPS_latitude) : null;
-      const lng = r._Lokasi_GPS_longitude !== undefined && r._Lokasi_GPS_longitude !== null ? Number(r._Lokasi_GPS_longitude) : null;
+      const geo = geoFromSubmission(r);
       const photoItems = getRepeatItems(r, 'group_ml7lo61');
-      const photoUrl = photoItems.length ? KoboClient.attachmentUrl(r, photoItems[0]['Foto_luka_hewan_pen_si_lain_yang_relevan']) : null;
+      const photoFilename = photoItems.length ? repeatField(photoItems[0], 'group_ml7lo61', 'Foto_luka_hewan_pen_si_lain_yang_relevan') : null;
+      const photoUrl = photoFilename ? KoboClient.attachmentUrl(r, photoFilename) : null;
       return {
         id: id,
         reporterName: r.Nama_lengkap_pasien || 'Anonim',
         caseType: 'Gigitan ' + (titleCase(r.Jenis_hewan) || 'Hewan'),
         kabupaten: '',
         banjarDesa: r.Alamat_lengkap || '-',
-        lat: (typeof lat === 'number' && !isNaN(lat)) ? lat : null,
-        lng: (typeof lng === 'number' && !isNaN(lng)) ? lng : null,
+        lat: geo.lat,
+        lng: geo.lng,
         symptoms: symptoms,
         notes: noteParts.join(' · '),
         photoUrl: photoUrl,
