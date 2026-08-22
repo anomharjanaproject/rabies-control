@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaCon Analytics — Dashboard Pendataan Hewan &amp; Lapor Gigitan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --navy:#0B3D57; --navy2:#0F4A66; --teal:#1C7293; --teal-lt:#5FA8B8;
+  --gold:#D99A3D; --gold-dark:#B9822E; --green:#2E7D5B; --red:#C1453D;
+  --bg:#F3F6F7; --card:#FFFFFF; --ink:#12232E; --muted:#66787F; --line:#E4EAEC;
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+.topbar{background:linear-gradient(120deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:.2px;}
+.topbar .brand svg{width:22px;height:22px;}
+.topbar .brand .tag{font-weight:500;font-size:11.5px;color:rgba(255,255,255,.7);margin-left:8px;padding:3px 9px;border:1px solid rgba(255,255,255,.25);border-radius:20px;}
+.topbar .status{display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,255,255,.85);}
+.btn{border:0;border-radius:9px;padding:9px 15px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .12s ease, opacity .12s ease;}
+.btn:active{transform:scale(.97);}
+.btn.primary{background:var(--gold);color:#2A1B04;}
+.btn.ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);}
+.btn.outline{background:#fff;color:var(--navy);border:1px solid var(--line);}
+.btn.outline:hover{border-color:var(--teal);}
+.btn svg{width:14px;height:14px;}
+.spin{animation:rcspin 1s linear infinite;}
+@keyframes rcspin{to{transform:rotate(360deg);}}
+
+.wrap{max-width:1360px;margin:0 auto;padding:20px 24px 60px;}
+
+/* Filter bar */
+.filter-bar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;box-shadow:0 1px 3px rgba(20,40,50,.04);}
+.filter-field{display:flex;flex-direction:column;gap:4px;min-width:180px;}
+.filter-field label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);}
+.filter-field select{padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:13px;background:#fff;color:var(--ink);min-width:180px;}
+.filter-note{font-size:11px;color:var(--muted);flex:1;min-width:220px;}
+.filter-note b{color:var(--teal);}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:22px;}
+.kpi-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:0 1px 3px rgba(20,40,50,.04);position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent,var(--teal));}
+.kpi-card .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;}
+.kpi-card .num{font-size:26px;font-weight:800;color:var(--navy);line-height:1;font-variant-numeric:tabular-nums;}
+.kpi-card .sub{font-size:11px;color:var(--muted);margin-top:6px;}
+
+/* Section headers */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 12px;}
+.section-head h2{font-size:16px;margin:0;color:var(--navy);display:flex;align-items:center;gap:8px;}
+.section-head .badge-count{font-size:11px;background:var(--teal);color:#fff;padding:2px 9px;border-radius:20px;font-weight:700;}
+.section-head p{margin:2px 0 0;font-size:11.5px;color:var(--muted);}
+
+/* Chart grid */
+.chart-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 10px;box-shadow:0 1px 3px rgba(20,40,50,.04);display:flex;flex-direction:column;}
+.chart-card.span2{grid-column:span 2;}
+.chart-card h3{font-size:12.5px;margin:0 0 2px;color:var(--ink);font-weight:700;}
+.chart-card .note{font-size:10px;color:var(--muted);margin-bottom:8px;}
+.chart-card .canvas-wrap{position:relative;height:190px;flex:1;}
+.chart-card .canvas-wrap.tall{height:230px;}
+.chart-card .empty-mini{font-size:11.5px;color:var(--muted);text-align:center;padding:40px 0;}
+.stat-inline{display:flex;align-items:baseline;gap:8px;justify-content:center;height:100%;flex-direction:column;padding:10px 0;}
+.stat-inline .big{font-size:34px;font-weight:800;color:var(--gold-dark);line-height:1;}
+.stat-inline .lbl2{font-size:11.5px;color:var(--muted);}
+
+/* Map */
+.map-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:0 1px 3px rgba(20,40,50,.04);}
+#dash-map{width:100%;height:440px;border-radius:10px;overflow:hidden;}
+.map-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);align-items:center;}
+.map-legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+.map-toggle{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;user-select:none;}
+
+/* Table */
+.table-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:0;overflow:hidden;box-shadow:0 1px 3px rgba(20,40,50,.04);margin-bottom:20px;}
+.table-card summary{cursor:pointer;padding:14px 18px;font-weight:700;font-size:13px;color:var(--navy);display:flex;align-items:center;justify-content:space-between;list-style:none;}
+.table-card summary::-webkit-details-marker{display:none;}
+.table-card summary .chev{transition:transform .2s ease;color:var(--muted);}
+.table-card[open] summary .chev{transform:rotate(90deg);}
+.table-scroll{overflow-x:auto;border-top:1px solid var(--line);max-height:480px;overflow-y:auto;}
+table.data-table{border-collapse:collapse;width:100%;font-size:11.5px;white-space:nowrap;}
+table.data-table th{position:sticky;top:0;background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-weight:700;z-index:2;}
+table.data-table td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--ink);}
+table.data-table tr:nth-child(even) td{background:#FAFCFD;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;}
+.badge.red{background:#FBE7E5;color:var(--red);}
+.badge.green{background:#E4F1EB;color:var(--green);}
+.badge.gold{background:#FCEFDA;color:var(--gold-dark);}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;}
+
+@media (max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr);}
+  .chart-grid{grid-template-columns:repeat(2,1fr);}
+  .chart-card.span2{grid-column:span 2;}
+}
+@media (max-width:640px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .chart-grid{grid-template-columns:1fr;}
+  .chart-card.span2{grid-column:span 1;}
+  .wrap{padding:16px 12px 40px;}
+  table.data-table{font-size:10.5px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c-4 0-7.2 3.1-7.2 7.1 0 5.3 7.2 12.9 7.2 12.9s7.2-7.6 7.2-12.9C19.2 5.1 16 2 12 2zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg>
+    RaCon Analytics <span class="tag">Dashboard Pendataan &amp; Pelaporan</span>
+  </div>
+  <div class="status">
+    <span id="sync-status">Memuat data...</span>
+    <button class="btn ghost" id="refresh-btn"><svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg>Muat Ulang</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- FILTER -->
+  <div class="filter-bar">
+    <div class="filter-field">
+      <label>Kecamatan</label>
+      <select id="f-kecamatan"><option value="all">Semua Kecamatan</option></select>
+    </div>
+    <div class="filter-field">
+      <label>Desa / Kelurahan</label>
+      <select id="f-desa"><option value="all">Semua Desa</option></select>
+    </div>
+    <button class="btn outline" id="f-reset">Reset Filter</button>
+    <div class="filter-note">Filter Kecamatan/Desa berlaku eksak untuk data <b>Pendataan Hewan</b>. Untuk <b>Lapor Gigitan</b> (belum punya field Kecamatan/Desa terstruktur), pencocokan dilakukan dari teks alamat sehingga sifatnya perkiraan.</div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card" style="--accent:var(--teal);"><div class="lbl">Rumah Tangga Terdata</div><div class="num" id="kpi-households">–</div><div class="sub" id="kpi-households-sub">&nbsp;</div></div>
+    <div class="kpi-card" style="--accent:var(--navy);"><div class="lbl">Total Hewan Terdata</div><div class="num" id="kpi-animals">–</div><div class="sub" id="kpi-animals-sub">&nbsp;</div></div>
+    <div class="kpi-card" style="--accent:var(--green);"><div class="lbl">Cakupan Vaksinasi</div><div class="num" id="kpi-vaxrate">–</div><div class="sub" id="kpi-vaxrate-sub">&nbsp;</div></div>
+    <div class="kpi-card" style="--accent:var(--gold-dark);"><div class="lbl">Total Laporan Gigitan</div><div class="num" id="kpi-cases">–</div><div class="sub" id="kpi-cases-sub">&nbsp;</div></div>
+    <div class="kpi-card" style="--accent:var(--red);"><div class="lbl">Laporan 30 Hari Terakhir</div><div class="num" id="kpi-cases-recent">–</div><div class="sub" id="kpi-cases-recent-sub">&nbsp;</div></div>
+    <div class="kpi-card" style="--accent:var(--teal-lt);"><div class="lbl">Rata² Jeda ke Faskes</div><div class="num" id="kpi-avgdays">–</div><div class="sub" id="kpi-avgdays-sub">&nbsp;</div></div>
+  </div>
+
+  <!-- HEWAN CHARTS -->
+  <div class="section-head">
+    <div>
+      <h2><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c-4 0-7.2 3.1-7.2 7.1 0 5.3 7.2 12.9 7.2 12.9s7.2-7.6 7.2-12.9C19.2 5.1 16 2 12 2z"/></svg> Analisis Pendataan Hewan <span class="badge-count" id="hewan-count-badge">0</span></h2>
+      <p>Seluruh variabel dari form Pendataan Hewan (populasi, jenis kelamin, status vaksinasi, sterilisasi, pola pemeliharaan, sebaran wilayah).</p>
+    </div>
+  </div>
+  <div class="chart-grid" id="hewan-chart-grid">
+    <div class="chart-card"><h3>Jenis Hewan</h3><div class="note">Anjing vs Kucing</div><div class="canvas-wrap"><canvas id="chart-species"></canvas></div></div>
+    <div class="chart-card"><h3>Jenis Kelamin</h3><div class="note">Jantan vs Betina</div><div class="canvas-wrap"><canvas id="chart-sex"></canvas></div></div>
+    <div class="chart-card"><h3>Status Vaksinasi Rabies</h3><div class="note">Sudah vs Belum divaksin</div><div class="canvas-wrap"><canvas id="chart-vaccine"></canvas></div></div>
+    <div class="chart-card"><h3>Status Sterilisasi</h3><div class="note">Dari submission bertipe data agregat</div><div class="canvas-wrap"><canvas id="chart-steril"></canvas></div></div>
+    <div class="chart-card span2"><h3>Sebaran Hewan per Kecamatan</h3><div class="note">Jumlah hewan terdata per kecamatan</div><div class="canvas-wrap"><canvas id="chart-kecamatan"></canvas></div></div>
+    <div class="chart-card"><h3>Pola Pemeliharaan</h3><div class="note">Dibiarkan berkeliaran vs di dalam rumah</div><div class="canvas-wrap"><canvas id="chart-roam"></canvas></div></div>
+    <div class="chart-card"><h3>Ternak Lain Dipelihara</h3><div class="note">Selain anjing/kucing</div><div class="canvas-wrap"><canvas id="chart-ternak"></canvas></div></div>
+    <div class="chart-card span2"><h3>Tren Pendataan per Bulan</h3><div class="note">Jumlah rumah tangga terdata dari waktu ke waktu</div><div class="canvas-wrap"><canvas id="chart-trend-hewan"></canvas></div></div>
+    <div class="chart-card"><h3>Kebutuhan Sterilisasi</h3><div class="note">Estimasi ekor yang membutuhkan</div><div class="canvas-wrap"><div class="stat-inline"><div class="big" id="stat-need-steril">–</div><div class="lbl2">ekor membutuhkan sterilisasi</div></div></div></div>
+  </div>
+
+  <!-- LAPOR GIGITAN CHARTS -->
+  <div class="section-head">
+    <div>
+      <h2><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Analisis Lapor Gigitan <span class="badge-count" id="gigitan-count-badge">0</span></h2>
+      <p>Seluruh variabel dari form Lapor Gigitan (profil korban, luka, hewan penggigit, kecepatan penanganan).</p>
+    </div>
+  </div>
+  <div class="chart-grid" id="gigitan-chart-grid">
+    <div class="chart-card"><h3>Jenis Hewan Penggigit</h3><div class="note">Anjing / kucing / lainnya</div><div class="canvas-wrap"><canvas id="chart-jenis-hewan-gigit"></canvas></div></div>
+    <div class="chart-card"><h3>Status Hewan Penggigit</h3><div class="note">Liar / berpemilik / dsb</div><div class="canvas-wrap"><canvas id="chart-status-hewan"></canvas></div></div>
+    <div class="chart-card"><h3>Kondisi Hewan Saat Ini</h3><div class="note">Sehat / sakit / mati / tidak diketahui</div><div class="canvas-wrap"><canvas id="chart-kondisi-hewan"></canvas></div></div>
+    <div class="chart-card"><h3>Riwayat Vaksinasi Hewan</h3><div class="note">Menurut pelapor</div><div class="canvas-wrap"><canvas id="chart-riwayat-vaksin"></canvas></div></div>
+    <div class="chart-card span2"><h3>Lokasi Gigitan pada Tubuh</h3><div class="note">Bisa lebih dari satu lokasi per kasus</div><div class="canvas-wrap"><canvas id="chart-lokasi-gigitan"></canvas></div></div>
+    <div class="chart-card span2"><h3>Jenis Luka</h3><div class="note">Bisa lebih dari satu jenis per kasus</div><div class="canvas-wrap"><canvas id="chart-jenis-luka"></canvas></div></div>
+    <div class="chart-card"><h3>Jenis Kelamin Korban</h3><div class="note">&nbsp;</div><div class="canvas-wrap"><canvas id="chart-kelamin-korban"></canvas></div></div>
+    <div class="chart-card span2"><h3>Sebaran Usia Korban</h3><div class="note">Kelompok umur (tahun)</div><div class="canvas-wrap"><canvas id="chart-usia"></canvas></div></div>
+    <div class="chart-card span2"><h3>Tren Laporan per Bulan</h3><div class="note">Jumlah laporan gigitan dari waktu ke waktu</div><div class="canvas-wrap"><canvas id="chart-trend-gigitan"></canvas></div></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="section-head"><div><h2>Peta Sebaran</h2><p>Titik lokasi Pendataan Hewan &amp; Laporan Gigitan (hanya yang memiliki GPS).</p></div></div>
+  <div class="map-card">
+    <div id="dash-map"></div>
+    <div class="map-legend">
+      <label class="map-toggle"><input type="checkbox" id="layer-hewan" checked><i class="dot" style="background:#1C7293;"></i>Titik Pendataan Hewan</label>
+      <label class="map-toggle"><input type="checkbox" id="layer-gigitan" checked><i class="dot" style="background:#C1453D;"></i>Titik Laporan Gigitan</label>
+      <span id="map-geo-note">&nbsp;</span>
+    </div>
+  </div>
+
+  <!-- RAW TABLES -->
+  <div class="section-head"><div><h2>Data Mentah</h2><p>Seluruh baris &amp; kolom sesuai submission asli (mengikuti filter aktif).</p></div></div>
+
+  <details class="table-card" id="table-hewan-wrap">
+    <summary>Tabel Pendataan Hewan <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></summary>
+    <div class="table-scroll"><table class="data-table" id="table-hewan"></table></div>
+  </details>
+
+  <details class="table-card" id="table-gigitan-wrap">
+    <summary>Tabel Lapor Gigitan <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></summary>
+    <div class="table-scroll"><table class="data-table" id="table-gigitan"></table></div>
+  </details>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   KONFIGURASI
+   Sama seperti app RaCon utama: data ditarik lewat proxy Cloudflare
+   Worker (mengatasi CORS Kobo), dari 2 form yang sama.
+============================================================ */
+const KOBO_CONFIG = {
+  serverUrl: 'https://rabies-control.anomharjanaproject.workers.dev',
+  petForm: { assetUid: 'adL2QnAbTuC8atdh8A8xrW' },
+  caseForm: { assetUid: 'aQzMotPzyu9KHL6Hdcahbs' },
+  apiToken: '',
+  refreshIntervalMs: 120000
+};
+
+const DESA_FIELDS_BY_KECAMATAN = {
+  abiansemal: 'Pilih_Desa_Kelurahan_di_Abiansemal',
+  kuta: 'Pilih_Desa_Kelurahan_di_Kuta',
+  kuta_selatan: 'Pilih_Desa_Kelurahan_di_Kuta_Selatan',
+  kuta_utara: 'Pilih_Desa_Kelurahan_di_Kuta_Utara',
+  mengwi: 'Pilih_Desa_Kelurahan_di_Mengwi',
+  petang: 'Pilih_Desa_Kelurahan_di_Petang'
+};
+
+const CHART_COLORS = ['#1C7293','#D99A3D','#2E7D5B','#C1453D','#5FA8B8','#8B5FBF','#B9822E','#4A6572','#E08E9B','#7FB069'];
+
+const WOUND_LABELS = { luka_jilat:'Luka jilat', luka_gores_ringan:'Luka gores ringan', luka_gigitan_dalam_banyak:'Luka gigitan dalam/banyak' };
+const BODY_LABELS = { kepala:'Kepala', leher:'Leher', tangan:'Tangan', kaki:'Kaki', badan:'Badan' };
+
+/* ============================================================
+   UTIL
+============================================================ */
+function titleCase(s){ if(!s) return '-'; return String(s).split('_').map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(' '); }
+function escapeHtml(str){
+  if(str === undefined || str === null) return '';
+  return String(str).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+function fmtDate(iso){ try{ const d = new Date(iso); return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return iso || '-'; } }
+function fmtMonth(iso){ try{ const d = new Date(iso); return d.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}); }catch(e){ return '-'; } }
+function pct(a,b){ return b>0 ? Math.round((a/b)*1000)/10 : 0; }
+
+function getRepeatItems(record, groupName){
+  if(Array.isArray(record[groupName])) return record[groupName];
+  const key = Object.keys(record).find(function(k){ return k === groupName || k.indexOf('/'+groupName) > -1; });
+  return key ? (record[key] || []) : [];
+}
+function repeatField(item, groupName, fieldName){
+  if(item[groupName + '/' + fieldName] !== undefined) return item[groupName + '/' + fieldName];
+  return item[fieldName];
+}
+function geoFromSubmission(r){
+  if(Array.isArray(r._geolocation) && r._geolocation.length === 2 && r._geolocation[0] !== null && r._geolocation[0] !== undefined){
+    const lat = Number(r._geolocation[0]), lng = Number(r._geolocation[1]);
+    if(!isNaN(lat) && !isNaN(lng)) return { lat: lat, lng: lng };
+  }
+  return { lat: null, lng: null };
+}
+function pickDesaKelurahan(r){
+  const vals = Object.keys(DESA_FIELDS_BY_KECAMATAN).map(function(k){ return r[DESA_FIELDS_BY_KECAMATAN[k]]; });
+  return vals.find(function(v){ return !!v; }) || '';
+}
+function mapVaccineStatus(code){
+  if(!code) return null;
+  return code.toLowerCase().indexOf('belum') > -1 ? 'Belum' : 'Sudah';
+}
+
+/* ============================================================
+   KOBO CLIENT
+============================================================ */
+const KoboClient = (function(){
+  function authHeaders(){ return KOBO_CONFIG.apiToken ? { 'Authorization': 'Token ' + KOBO_CONFIG.apiToken } : {}; }
+  async function fetchSubmissions(formConf){
+    const url = KOBO_CONFIG.serverUrl + '/api/v2/assets/' + formConf.assetUid + '/data/?format=json&_=' + Date.now();
+    const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
+    if(!res.ok) throw new Error('Kobo API merespons status ' + res.status);
+    const json = await res.json();
+    return json.results || [];
+  }
+  function attachmentUrl(record, fileValue){
+    if(!record._attachments || !fileValue) return null;
+    const found = record._attachments.find(function(a){
+      return a.media_file_basename === fileValue ||
+        (a.filename && a.filename.indexOf(fileValue) > -1) ||
+        (a.filename && a.filename.indexOf(String(fileValue).replace(/ /g,'_')) > -1);
+    });
+    return found ? (found.download_small_url || found.download_url) : null;
+  }
+  return { fetchSubmissions, attachmentUrl };
+})();
+
+/* ============================================================
+   STATE
+============================================================ */
+let RAW_PETS = [];   // 1 baris = 1 submission rumah tangga (Pendataan Hewan)
+let RAW_CASES = [];  // 1 baris = 1 submission (Lapor Gigitan)
+let charts = {};      // registry Chart.js instances
+let map = null;
+let mapLayers = { hewan: null, gigitan: null };
+
+/* ============================================================
+   MAPPING: PENDATAAN HEWAN
+   Mengembalikan 1 objek per submission (household), plus daftar
+   hewan individual (baik dari repeat group maupun skema agregat)
+   supaya bisa dipakai untuk tally jenis/kelamin/vaksin/dll.
+============================================================ */
+function mapPetSubmission(r){
+  const geo = geoFromSubmission(r);
+  const desa = pickDesaKelurahan(r);
+  const kecamatan = r.Kecamatan || '';
+  const banjar = r.Banjar_Lingkungan || '';
+  const ownerName = r.Nama_Pemilik_Hewan || r.Nama_Penduduk_kepala_keluarga || '-';
+  const pendata = r.Nama_Pendata || '-';
+  const tanggal = r.Tanggal_Pencatatan || r.Tanggal_kunjungan || r._submission_time;
+  const animals = [];
+
+  const repeatAnimals = getRepeatItems(r, 'group_tc5cy37');
+  if(repeatAnimals.length > 0){
+    repeatAnimals.forEach(function(a){
+      animals.push({
+        species: titleCase(repeatField(a,'group_tc5cy37','Jenis_Hewan')),
+        sex: repeatField(a,'group_tc5cy37','Jenis_Kelamin_Hewan') === 'jantan' ? 'Jantan' : (repeatField(a,'group_tc5cy37','Jenis_Kelamin_Hewan') === 'betina' ? 'Betina' : null),
+        vaccineStatus: mapVaccineStatus(repeatField(a,'group_tc5cy37','Status_Vaksinasi_Rabies')),
+        source: 'repeat'
+      });
+    });
+  } else {
+    ['Anjing','Kucing'].forEach(function(sp){
+      const total = Number(r['Jumlah_Total_'+sp+'_yang_dipelihara']) || 0;
+      if(total <= 0) return;
+      const jantan = Number(r['Jumlah_'+sp.toLowerCase()+'_jantan']) || 0;
+      const betina = Number(r['Jumlah_'+sp.toLowerCase()+'_betina']) || 0;
+      const sudah = Number(r['Jumlah_'+sp.toLowerCase()+'_yang_S_sin_rabies_tahun_ini']) || 0;
+      const belum = Number(r['Jumlah_'+sp.toLowerCase()+'_yang_B_sin_rabies_tahun_ini']) || 0;
+      for(let i=0;i<total;i++){
+        animals.push({
+          species: sp,
+          sex: i < jantan ? 'Jantan' : (i < jantan+betina ? 'Betina' : null),
+          vaccineStatus: i < sudah ? 'Sudah' : (i < sudah+belum ? 'Belum' : null),
+          source: 'aggregate'
+        });
+      }
+    });
+  }
+
+  return {
+    id: r._uuid || String(r._id),
+    tanggal: tanggal,
+    pendata: pendata,
+    ownerName: ownerName,
+    kecamatan: kecamatan,
+    desa: desa,
+    banjar: banjar,
+    lat: geo.lat, lng: geo.lng,
+    animals: animals,
+    animalCount: animals.length,
+    sterilSudah: Number(r.Jumlah_anjing_yang_SUDAH_disteril)||0,
+    sterilButuh: Number(r.Jumlah_anjing_yang_M_BUTUHKAN_sterilisasi)||0,
+    berkeliaran: Number(r.Jumlah_anjing_yang_dibiarkan_berkeliaran)||0,
+    diDalamRumah: Number(r.Jumlah_anjing_yang_d_lihara_didalam_rumah)||0,
+    ternakLain: r.Jenis_ternak_yang_dipelihara || null,
+    isAggregateSchema: repeatAnimals.length === 0,
+    raw: r
+  };
+}
+
+/* ============================================================
+   MAPPING: LAPOR GIGITAN
+============================================================ */
+function mapCaseSubmission(r){
+  const geo = geoFromSubmission(r);
+  const photoItems = getRepeatItems(r, 'group_ml7lo61');
+  let usia = r.Usia !== undefined ? Number(r.Usia) : null;
+  if(usia !== null && isNaN(usia)) usia = null;
+  const tglGigitan = r.Tanggal_kejadian_gigitan || null;
+  const tglBerobat = r.Tanggal_berobat_ke_fasyankes || null;
+  let jedaHari = null;
+  if(tglGigitan && tglBerobat){
+    try{
+      const d1 = new Date(tglGigitan), d2 = new Date(tglBerobat);
+      const diff = (d2 - d1) / 86400000;
+      if(!isNaN(diff) && diff >= 0 && diff < 3650) jedaHari = diff;
+    }catch(e){}
+  }
+  return {
+    id: r._uuid || String(r._id),
+    tanggal: r._submission_time,
+    reporterName: r.Nama_lengkap_pasien || 'Anonim',
+    usia: usia,
+    jenisKelamin: r.Jenis_kelamin || null,
+    alamat: r.Alamat_lengkap || '-',
+    telepon: r.Nomor_telepon || '-',
+    tglGigitan: tglGigitan,
+    tglBerobat: tglBerobat,
+    jedaHari: jedaHari,
+    rincianKejadian: r.Rincian_Kejadian_Riwayat_Luka || '',
+    lokasiGigitan: (r.Lokasi_gigitan_pada_tubuh || '').split(' ').filter(Boolean),
+    jenisLuka: (r.Jenis_luka || '').split(' ').filter(Boolean),
+    tindakanPertama: r.Tindakan_pertama_yang_sudah_dilakukan || '',
+    jenisHewan: r.Jenis_hewan || null,
+    statusHewan: r.Status_hewan || null,
+    kondisiHewan: r.Kondisi_hewan_saat_ini || null,
+    riwayatVaksinHewan: r.Riwayat_vaksinasi_pada_hewan || null,
+    lat: geo.lat, lng: geo.lng,
+    photoCount: photoItems.length,
+    raw: r
+  };
+}
+
+/* ============================================================
+   FILTER STATE
+============================================================ */
+function currentFilter(){
+  return {
+    kecamatan: document.getElementById('f-kecamatan').value,
+    desa: document.getElementById('f-desa').value
+  };
+}
+function applyFilter(pets, cases){
+  const f = currentFilter();
+  let fp = pets, fc = cases;
+  if(f.kecamatan !== 'all'){
+    fp = fp.filter(function(p){ return p.kecamatan === f.kecamatan; });
+    const kecLabel = titleCase(f.kecamatan).toLowerCase();
+    fc = fc.filter(function(c){ return (c.alamat||'').toLowerCase().indexOf(kecLabel) > -1; });
+  }
+  if(f.desa !== 'all'){
+    fp = fp.filter(function(p){ return p.desa === f.desa; });
+    const desaLabel = titleCase(f.desa).toLowerCase();
+    fc = fc.filter(function(c){ return (c.alamat||'').toLowerCase().indexOf(desaLabel) > -1; });
+  }
+  return { pets: fp, cases: fc };
+}
+
+function populateFilterOptions(pets){
+  const kecSel = document.getElementById('f-kecamatan');
+  const desaSel = document.getElementById('f-desa');
+  const prevKec = kecSel.value || 'all';
+  const kecamatans = Array.from(new Set(pets.map(function(p){ return p.kecamatan; }).filter(Boolean))).sort();
+  kecSel.innerHTML = '<option value="all">Semua Kecamatan</option>' + kecamatans.map(function(k){
+    return '<option value="'+escapeHtml(k)+'">'+escapeHtml(titleCase(k))+'</option>';
+  }).join('');
+  kecSel.value = kecamatans.indexOf(prevKec) > -1 ? prevKec : 'all';
+  updateDesaOptions(pets);
+}
+function updateDesaOptions(pets){
+  const kecSel = document.getElementById('f-kecamatan');
+  const desaSel = document.getElementById('f-desa');
+  const prevDesa = desaSel.value || 'all';
+  const kec = kecSel.value;
+  const relevant = kec === 'all' ? pets : pets.filter(function(p){ return p.kecamatan === kec; });
+  const desas = Array.from(new Set(relevant.map(function(p){ return p.desa; }).filter(Boolean))).sort();
+  desaSel.innerHTML = '<option value="all">Semua Desa</option>' + desas.map(function(d){
+    return '<option value="'+escapeHtml(d)+'">'+escapeHtml(titleCase(d))+'</option>';
+  }).join('');
+  desaSel.value = desas.indexOf(prevDesa) > -1 ? prevDesa : 'all';
+}
+
+/* ============================================================
+   CHART HELPERS
+============================================================ */
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function tallyToChart(canvasId, tallyObj, opts){
+  destroyChart(canvasId);
+  const el = document.getElementById(canvasId);
+  const entries = Object.keys(tallyObj).map(function(k){ return [k, tallyObj[k]]; }).filter(function(e){ return e[1] > 0; });
+  entries.sort(function(a,b){ return b[1]-a[1]; });
+  const wrap = el.closest('.canvas-wrap');
+  if(entries.length === 0){
+    el.style.display = 'none';
+    if(!wrap.querySelector('.empty-mini')){
+      const d = document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d);
+    }
+    return;
+  }
+  el.style.display = '';
+  const existingEmpty = wrap.querySelector('.empty-mini'); if(existingEmpty) existingEmpty.remove();
+
+  const type = (opts && opts.type) || 'doughnut';
+  charts[canvasId] = new Chart(el.getContext('2d'), {
+    type: type,
+    data: {
+      labels: entries.map(function(e){ return (opts&&opts.labelMap ? (opts.labelMap[e[0]]||titleCase(e[0])) : titleCase(e[0])); }),
+      datasets: [{
+        data: entries.map(function(e){ return e[1]; }),
+        backgroundColor: entries.map(function(_,i){ return CHART_COLORS[i % CHART_COLORS.length]; }),
+        borderWidth: type==='bar' ? 0 : 2,
+        borderColor:'#fff',
+        borderRadius: type==='bar' ? 6 : 0
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      indexAxis: (opts && opts.horizontal) ? 'y' : 'x',
+      plugins:{
+        legend:{ display: type!=='bar', position:'bottom', labels:{boxWidth:10,font:{size:10.5}} },
+        tooltip:{ callbacks: (opts&&opts.percentTooltip) ? { label:function(ctx){
+          const total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+          return ctx.label+': '+ctx.parsed+' ('+pct(ctx.parsed,total)+'%)';
+        } } : {} }
+      },
+      scales: type==='bar' ? { x:{ grid:{display:false}, ticks:{font:{size:10}} }, y:{ grid:{color:'#EEF2F3'}, ticks:{font:{size:10}} } } : undefined
+    }
+  });
+}
+
+function seriesToLineChart(canvasId, monthTally){
+  destroyChart(canvasId);
+  const el = document.getElementById(canvasId);
+  const months = Object.keys(monthTally).sort();
+  const wrap = el.closest('.canvas-wrap');
+  const existingEmpty = wrap.querySelector('.empty-mini'); if(existingEmpty) existingEmpty.remove();
+  if(months.length === 0){ el.style.display='none'; const d=document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d); return; }
+  el.style.display='';
+  charts[canvasId] = new Chart(el.getContext('2d'), {
+    type:'line',
+    data:{
+      labels: months.map(function(m){ const [y,mo]=m.split('-'); return fmtMonth(y+'-'+mo+'-01'); }),
+      datasets:[{ data: months.map(function(m){ return monthTally[m]; }), borderColor:'#1C7293', backgroundColor:'rgba(28,114,147,.12)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor:'#1C7293' }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#EEF2F3'}, ticks:{font:{size:10}, precision:0} } } }
+  });
+}
+
+/* ============================================================
+   RENDER: KPI
+============================================================ */
+function renderKPI(pets, cases){
+  const totalAnimals = pets.reduce(function(s,p){ return s + p.animalCount; }, 0);
+  let vaxKnown=0, vaxSudah=0;
+  pets.forEach(function(p){ p.animals.forEach(function(a){ if(a.vaccineStatus){ vaxKnown++; if(a.vaccineStatus==='Sudah') vaxSudah++; } }); });
+
+  document.getElementById('kpi-households').textContent = pets.length.toLocaleString('id-ID');
+  document.getElementById('kpi-households-sub').textContent = pets.length + ' submission form Pendataan Hewan';
+
+  document.getElementById('kpi-animals').textContent = totalAnimals.toLocaleString('id-ID');
+  const anjing = pets.reduce(function(s,p){ return s + p.animals.filter(function(a){return a.species==='Anjing';}).length; },0);
+  const kucing = pets.reduce(function(s,p){ return s + p.animals.filter(function(a){return a.species==='Kucing';}).length; },0);
+  document.getElementById('kpi-animals-sub').textContent = anjing + ' anjing · ' + kucing + ' kucing';
+
+  document.getElementById('kpi-vaxrate').textContent = (vaxKnown>0 ? pct(vaxSudah,vaxKnown) : 0) + '%';
+  document.getElementById('kpi-vaxrate-sub').textContent = vaxSudah + ' dari ' + vaxKnown + ' hewan (data diketahui)';
+
+  document.getElementById('kpi-cases').textContent = cases.length.toLocaleString('id-ID');
+  document.getElementById('kpi-cases-sub').textContent = 'Seluruh laporan gigitan tercatat';
+
+  const recent = cases.filter(function(c){ try{ return (Date.now()-new Date(c.tanggal).getTime())/86400000 <= 30; }catch(e){return false;} });
+  document.getElementById('kpi-cases-recent').textContent = recent.length.toLocaleString('id-ID');
+  document.getElementById('kpi-cases-recent-sub').textContent = 'Sejak ' + fmtDate(new Date(Date.now()-30*86400000).toISOString());
+
+  const jedaVals = cases.map(function(c){ return c.jedaHari; }).filter(function(v){ return v !== null; });
+  const avgJeda = jedaVals.length ? (jedaVals.reduce(function(a,b){return a+b;},0)/jedaVals.length) : null;
+  document.getElementById('kpi-avgdays').textContent = avgJeda !== null ? (avgJeda < 1 ? '<1' : avgJeda.toFixed(1)) : '–';
+  document.getElementById('kpi-avgdays-sub').textContent = jedaVals.length ? ('hari, dari '+jedaVals.length+' laporan bertanggal lengkap') : 'Data tanggal belum lengkap';
+}
+
+/* ============================================================
+   RENDER: HEWAN CHARTS
+============================================================ */
+function renderHewanCharts(pets){
+  document.getElementById('hewan-count-badge').textContent = pets.length;
+
+  const speciesTally = {}, sexTally = {}, vaxTally = {}, sterilTally = {}, roamTally = {}, kecTally = {}, ternakTally = {};
+  const monthTally = {};
+  let sterilButuhTotal = 0;
+
+  pets.forEach(function(p){
+    if(p.kecamatan) kecTally[p.kecamatan] = (kecTally[p.kecamatan]||0) + p.animalCount;
+    if(p.ternakLain) String(p.ternakLain).split(' ').filter(Boolean).forEach(function(t){ ternakTally[t] = (ternakTally[t]||0)+1; });
+    if(p.isAggregateSchema){
+      sterilTally['Sudah disteril'] = (sterilTally['Sudah disteril']||0) + p.sterilSudah;
+      sterilTally['Membutuhkan sterilisasi'] = (sterilTally['Membutuhkan sterilisasi']||0) + p.sterilButuh;
+      roamTally['Dibiarkan berkeliaran'] = (roamTally['Dibiarkan berkeliaran']||0) + p.berkeliaran;
+      roamTally['Dipelihara di dalam rumah'] = (roamTally['Dipelihara di dalam rumah']||0) + p.diDalamRumah;
+      sterilButuhTotal += p.sterilButuh;
+    }
+    if(p.tanggal){ try{ const d=new Date(p.tanggal); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); monthTally[key]=(monthTally[key]||0)+1; }catch(e){} }
+    p.animals.forEach(function(a){
+      if(a.species) speciesTally[a.species] = (speciesTally[a.species]||0)+1;
+      if(a.sex) sexTally[a.sex] = (sexTally[a.sex]||0)+1;
+      if(a.vaccineStatus) vaxTally[a.vaccineStatus] = (vaxTally[a.vaccineStatus]||0)+1;
+    });
+  });
+
+  tallyToChart('chart-species', speciesTally, {percentTooltip:true});
+  tallyToChart('chart-sex', sexTally, {percentTooltip:true});
+  tallyToChart('chart-vaccine', vaxTally, {percentTooltip:true, labelMap:{Sudah:'Sudah divaksin',Belum:'Belum divaksin'}});
+  tallyToChart('chart-steril', sterilTally, {percentTooltip:true});
+  tallyToChart('chart-kecamatan', kecTally, {type:'bar'});
+  tallyToChart('chart-roam', roamTally, {percentTooltip:true});
+  tallyToChart('chart-ternak', ternakTally, {type:'bar', horizontal:true});
+  seriesToLineChart('chart-trend-hewan', monthTally);
+  document.getElementById('stat-need-steril').textContent = sterilButuhTotal.toLocaleString('id-ID');
+}
+
+/* ============================================================
+   RENDER: LAPOR GIGITAN CHARTS
+============================================================ */
+function renderGigitanCharts(cases){
+  document.getElementById('gigitan-count-badge').textContent = cases.length;
+
+  const jenisHewanTally={}, statusHewanTally={}, kondisiTally={}, riwayatVaxTally={}, lokasiTally={}, lukaTally={}, kelaminTally={}, usiaTally={};
+  const monthTally = {};
+  const usiaBuckets = [ [0,5,'0-5'], [6,12,'6-12'], [13,17,'13-17'], [18,30,'18-30'], [31,50,'31-50'], [51,200,'51+'] ];
+
+  cases.forEach(function(c){
+    if(c.jenisHewan) jenisHewanTally[c.jenisHewan] = (jenisHewanTally[c.jenisHewan]||0)+1;
+    if(c.statusHewan) statusHewanTally[c.statusHewan] = (statusHewanTally[c.statusHewan]||0)+1;
+    if(c.kondisiHewan) kondisiTally[c.kondisiHewan] = (kondisiTally[c.kondisiHewan]||0)+1;
+    if(c.riwayatVaksinHewan) riwayatVaxTally[c.riwayatVaksinHewan] = (riwayatVaxTally[c.riwayatVaksinHewan]||0)+1;
+    if(c.jenisKelamin) kelaminTally[c.jenisKelamin] = (kelaminTally[c.jenisKelamin]||0)+1;
+    c.lokasiGigitan.forEach(function(l){ lokasiTally[l] = (lokasiTally[l]||0)+1; });
+    c.jenisLuka.forEach(function(l){ lukaTally[l] = (lukaTally[l]||0)+1; });
+    if(c.usia !== null){
+      const b = usiaBuckets.find(function(bk){ return c.usia >= bk[0] && c.usia <= bk[1]; });
+      if(b) usiaTally[b[2]] = (usiaTally[b[2]]||0)+1;
+    }
+    if(c.tanggal){ try{ const d=new Date(c.tanggal); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); monthTally[key]=(monthTally[key]||0)+1; }catch(e){} }
+  });
+
+  tallyToChart('chart-jenis-hewan-gigit', jenisHewanTally, {percentTooltip:true});
+  tallyToChart('chart-status-hewan', statusHewanTally, {percentTooltip:true});
+  tallyToChart('chart-kondisi-hewan', kondisiTally, {percentTooltip:true});
+  tallyToChart('chart-riwayat-vaksin', riwayatVaxTally, {percentTooltip:true});
+  tallyToChart('chart-lokasi-gigitan', lokasiTally, {type:'bar', labelMap:BODY_LABELS});
+  tallyToChart('chart-jenis-luka', lukaTally, {type:'bar', horizontal:true, labelMap:WOUND_LABELS});
+  tallyToChart('chart-kelamin-korban', kelaminTally, {percentTooltip:true});
+  // urutkan bucket usia sesuai definisi, bukan berdasarkan jumlah
+  destroyChart('chart-usia');
+  (function(){
+    const el = document.getElementById('chart-usia');
+    const wrap = el.closest('.canvas-wrap'); const ex = wrap.querySelector('.empty-mini'); if(ex) ex.remove();
+    const labels = usiaBuckets.map(function(b){ return b[2]; });
+    const data = labels.map(function(l){ return usiaTally[l]||0; });
+    if(data.every(function(v){return v===0;})){ el.style.display='none'; const d=document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d); return; }
+    el.style.display='';
+    charts['chart-usia'] = new Chart(el.getContext('2d'), {
+      type:'bar',
+      data:{ labels: labels, datasets:[{ data:data, backgroundColor:'#D99A3D', borderRadius:6 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#EEF2F3'}, ticks:{precision:0} } } }
+    });
+  })();
+  seriesToLineChart('chart-trend-gigitan', monthTally);
+}
+
+/* ============================================================
+   RENDER: MAP
+============================================================ */
+function ensureMap(){
+  if(map) return map;
+  map = L.map('dash-map', { scrollWheelZoom:false }).setView([-8.55, 115.22], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
+  setTimeout(function(){ try{ map.invalidateSize(); }catch(e){} }, 150);
+  return map;
+}
+function dotIcon(color){ return L.divIcon({ className:'', html:'<div style="width:12px;height:12px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);"></div>', iconSize:[12,12], iconAnchor:[6,6] }); }
+
+function jitterGroup(points){
+  const groups = {};
+  points.forEach(function(p){ const key = p.lat.toFixed(4)+','+p.lng.toFixed(4); (groups[key]=groups[key]||[]).push(p); });
+  const out = [];
+  Object.keys(groups).forEach(function(key){
+    const g = groups[key];
+    g.forEach(function(p, idx){
+      let lat=p.lat, lng=p.lng;
+      if(g.length>1){ const ang=(2*Math.PI*idx)/g.length; lat += 0.0009*Math.cos(ang); lng += 0.0009*Math.sin(ang); }
+      out.push(Object.assign({}, p, { lat:lat, lng:lng }));
+    });
+  });
+  return out;
+}
+
+function renderMap(pets, cases){
+  const m = ensureMap();
+  if(mapLayers.hewan) m.removeLayer(mapLayers.hewan);
+  if(mapLayers.gigitan) m.removeLayer(mapLayers.gigitan);
+
+  const petPoints = jitterGroup(pets.filter(function(p){ return typeof p.lat==='number' && typeof p.lng==='number'; }));
+  const casePoints = jitterGroup(cases.filter(function(c){ return typeof c.lat==='number' && typeof c.lng==='number'; }));
+
+  const hewanMarkers = petPoints.map(function(p){
+    const mk = L.marker([p.lat,p.lng], {icon:dotIcon('#1C7293')});
+    mk.bindPopup('<b>Pendataan Hewan</b><br>'+escapeHtml(p.ownerName)+'<br>'+escapeHtml(titleCase(p.kecamatan))+(p.desa?', '+escapeHtml(titleCase(p.desa)):'')+'<br>'+p.animalCount+' ekor hewan<br>'+fmtDate(p.tanggal));
+    return mk;
+  });
+  const gigitanMarkers = casePoints.map(function(c){
+    const mk = L.marker([c.lat,c.lng], {icon:dotIcon('#C1453D')});
+    mk.bindPopup('<b>Laporan Gigitan</b><br>'+escapeHtml(c.reporterName)+'<br>Hewan: '+escapeHtml(titleCase(c.jenisHewan))+'<br>'+escapeHtml(c.alamat)+'<br>'+fmtDate(c.tanggal));
+    return mk;
+  });
+
+  mapLayers.hewan = L.layerGroup(hewanMarkers);
+  mapLayers.gigitan = L.layerGroup(gigitanMarkers);
+  if(document.getElementById('layer-hewan').checked) mapLayers.hewan.addTo(m);
+  if(document.getElementById('layer-gigitan').checked) mapLayers.gigitan.addTo(m);
+
+  const all = hewanMarkers.concat(gigitanMarkers).map(function(mk){ return mk.getLatLng(); });
+  if(all.length === 1) m.setView(all[0], 14);
+  else if(all.length > 1) m.fitBounds(all, {padding:[30,30], maxZoom:14});
+
+  document.getElementById('map-geo-note').textContent =
+    petPoints.length+' dari '+pets.length+' data hewan & '+casePoints.length+' dari '+cases.length+' laporan gigitan memiliki titik GPS.';
+}
+
+/* ============================================================
+   RENDER: TABLES
+============================================================ */
+function renderTable(tableId, rows, columns){
+  const table = document.getElementById(tableId);
+  if(rows.length === 0){ table.innerHTML = '<tr><td class="empty-state">Belum ada data untuk filter ini.</td></tr>'; return; }
+  let html = '<thead><tr>' + columns.map(function(c){ return '<th>'+escapeHtml(c.label)+'</th>'; }).join('') + '</tr></thead><tbody>';
+  rows.forEach(function(r){
+    html += '<tr>' + columns.map(function(c){ return '<td>'+escapeHtml(c.get(r))+'</td>'; }).join('') + '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function renderHewanTable(pets){
+  const rows = [];
+  pets.forEach(function(p){
+    if(p.animals.length === 0){
+      rows.push({ p:p, a:null });
+    } else {
+      p.animals.forEach(function(a){ rows.push({ p:p, a:a }); });
+    }
+  });
+  renderTable('table-hewan', rows, [
+    { label:'Tanggal', get:function(r){ return fmtDate(r.p.tanggal); } },
+    { label:'Pendata', get:function(r){ return r.p.pendata; } },
+    { label:'Pemilik', get:function(r){ return r.p.ownerName; } },
+    { label:'Kecamatan', get:function(r){ return titleCase(r.p.kecamatan); } },
+    { label:'Desa/Kelurahan', get:function(r){ return titleCase(r.p.desa); } },
+    { label:'Banjar/Lingkungan', get:function(r){ return r.p.banjar || '-'; } },
+    { label:'Jenis Hewan', get:function(r){ return r.a ? r.a.species : '-'; } },
+    { label:'Jenis Kelamin', get:function(r){ return r.a && r.a.sex ? r.a.sex : '-'; } },
+    { label:'Status Vaksin', get:function(r){ return r.a && r.a.vaccineStatus ? r.a.vaccineStatus : '-'; } },
+    { label:'Sudah Disteril', get:function(r){ return r.p.sterilSudah; } },
+    { label:'Butuh Sterilisasi', get:function(r){ return r.p.sterilButuh; } },
+    { label:'Berkeliaran', get:function(r){ return r.p.berkeliaran; } },
+    { label:'Di Dalam Rumah', get:function(r){ return r.p.diDalamRumah; } },
+    { label:'Ternak Lain', get:function(r){ return r.p.ternakLain ? titleCase(r.p.ternakLain) : '-'; } },
+    { label:'GPS', get:function(r){ return (typeof r.p.lat==='number') ? r.p.lat.toFixed(5)+', '+r.p.lng.toFixed(5) : '-'; } }
+  ]);
+}
+
+function renderGigitanTable(cases){
+  renderTable('table-gigitan', cases, [
+    { label:'Tanggal Lapor', get:function(c){ return fmtDate(c.tanggal); } },
+    { label:'Nama Pasien', get:function(c){ return c.reporterName; } },
+    { label:'Usia', get:function(c){ return c.usia !== null ? c.usia : '-'; } },
+    { label:'Jenis Kelamin', get:function(c){ return titleCase(c.jenisKelamin); } },
+    { label:'Alamat', get:function(c){ return c.alamat; } },
+    { label:'Telepon', get:function(c){ return c.telepon; } },
+    { label:'Tgl Kejadian', get:function(c){ return c.tglGigitan ? fmtDate(c.tglGigitan) : '-'; } },
+    { label:'Tgl Berobat', get:function(c){ return c.tglBerobat ? fmtDate(c.tglBerobat) : '-'; } },
+    { label:'Jeda (hari)', get:function(c){ return c.jedaHari !== null ? c.jedaHari.toFixed(1) : '-'; } },
+    { label:'Lokasi Gigitan', get:function(c){ return c.lokasiGigitan.map(function(l){return BODY_LABELS[l]||l;}).join(', ') || '-'; } },
+    { label:'Jenis Luka', get:function(c){ return c.jenisLuka.map(function(l){return WOUND_LABELS[l]||l;}).join(', ') || '-'; } },
+    { label:'Tindakan Pertama', get:function(c){ return c.tindakanPertama || '-'; } },
+    { label:'Jenis Hewan', get:function(c){ return titleCase(c.jenisHewan); } },
+    { label:'Status Hewan', get:function(c){ return titleCase(c.statusHewan); } },
+    { label:'Kondisi Hewan', get:function(c){ return titleCase(c.kondisiHewan); } },
+    { label:'Riwayat Vaksin Hewan', get:function(c){ return titleCase(c.riwayatVaksinHewan); } },
+    { label:'Jml Foto', get:function(c){ return c.photoCount; } },
+    { label:'GPS', get:function(c){ return (typeof c.lat==='number') ? c.lat.toFixed(5)+', '+c.lng.toFixed(5) : '-'; } }
+  ]);
+}
+
+/* ============================================================
+   RENDER ALL (dipanggil tiap kali data / filter berubah)
+============================================================ */
+function renderAll(){
+  const filtered = applyFilter(RAW_PETS, RAW_CASES);
+  renderKPI(filtered.pets, filtered.cases);
+  renderHewanCharts(filtered.pets);
+  renderGigitanCharts(filtered.cases);
+  renderMap(filtered.pets, filtered.cases);
+  renderHewanTable(filtered.pets);
+  renderGigitanTable(filtered.cases);
+}
+
+/* ============================================================
+   SYNC
+============================================================ */
+async function syncData(){
+  const statusEl = document.getElementById('sync-status');
+  const iconEl = document.getElementById('refresh-icon');
+  iconEl.classList.add('spin');
+  statusEl.textContent = 'Memuat data...';
+  try{
+    const [rawPets, rawCases] = await Promise.all([
+      KoboClient.fetchSubmissions(KOBO_CONFIG.petForm),
+      KoboClient.fetchSubmissions(KOBO_CONFIG.caseForm)
+    ]);
+    RAW_PETS = rawPets.map(mapPetSubmission);
+    RAW_CASES = rawCases.map(mapCaseSubmission);
+    populateFilterOptions(RAW_PETS);
+    renderAll();
+    statusEl.textContent = 'Tersinkron · ' + new Date().toLocaleTimeString('id-ID');
+  }catch(err){
+    console.error('Gagal memuat data dashboard', err);
+    statusEl.textContent = 'Gagal memuat data. Coba muat ulang.';
+  }finally{
+    iconEl.classList.remove('spin');
+  }
+}
+
+/* ============================================================
+   EVENTS & INIT
+============================================================ */
+document.getElementById('refresh-btn').addEventListener('click', syncData);
+document.getElementById('f-kecamatan').addEventListener('change', function(){ updateDesaOptions(RAW_PETS); renderAll(); });
+document.getElementById('f-desa').addEventListener('change', renderAll);
+document.getElementById('f-reset').addEventListener('click', function(){
+  document.getElementById('f-kecamatan').value = 'all';
+  updateDesaOptions(RAW_PETS);
+  document.getElementById('f-desa').value = 'all';
+  renderAll();
+});
+document.getElementById('layer-hewan').addEventListener('change', function(){ renderMap(applyFilter(RAW_PETS,RAW_CASES).pets, applyFilter(RAW_PETS,RAW_CASES).cases); });
+document.getElementById('layer-gigitan').addEventListener('change', function(){ renderMap(applyFilter(RAW_PETS,RAW_CASES).pets, applyFilter(RAW_PETS,RAW_CASES).cases); });
+
+syncData();
+setInterval(syncData, KOBO_CONFIG.refreshIntervalMs);
+
+})();
+</script>
+</body>
+</html>
