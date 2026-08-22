@@ -400,7 +400,7 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
         <div class="section-title">Ringkasan</div>
         <div class="grid cols-2">
           <div class="kpi"><div class="num" id="w-my-pets-count">0</div><div class="lbl">Hewan terdaftar</div></div>
-          <div class="kpi"><div class="num" id="w-nearby-cases-count">0</div><div class="lbl">Kasus dilaporkan di sekitar (30 hari)</div></div>
+          <div class="kpi"><div class="num" id="w-nearby-cases-count">0</div><div class="lbl">Laporan yang saya kirim</div></div>
         </div>
 
         <div class="section-title">Aksi Cepat</div>
@@ -466,6 +466,10 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
             <span><i class="dot" style="background:var(--green);"></i>Selesai</span>
           </div>
         </div>
+        <div style="display:flex;gap:8px;margin:8px 0 4px;">
+          <button type="button" class="btn outline sm" id="radar-refresh-btn">Muat Ulang Peta</button>
+          <span id="radar-sync-status" style="font-size:10.5px;color:var(--muted);align-self:center;"></span>
+        </div>
 
         <div class="section-title">Layanan Terdekat (Nearest Vet / VAR)</div>
         <div id="w-vet-list"></div>
@@ -487,9 +491,20 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
           <h4 style="font-size:13.5px;margin-bottom:6px;"><svg class="icon"><use href="#icon-paw"></use></svg> Mengenali Gejala Rabies pada Anjing</h4>
           <p style="font-size:12.5px;">Perubahan sifat mendadak, agresif tanpa provokasi, air liur berlebihan, takut air/cahaya, lumpuh pada rahang/kaki, dan pergerakan tidak biasa. Segera laporkan bila menemukan tanda-tanda ini.</p>
         </div>
-        <div class="card">
+        <div class="card" style="margin-bottom:10px;">
           <h4 style="font-size:13.5px;margin-bottom:6px;"><svg class="icon"><use href="#icon-globe"></use></svg> Target Global &amp; Bali</h4>
           <p style="font-size:12.5px;">WHO menargetkan nol kematian manusia akibat rabies anjing pada 2030 ("Zero by 30"). Provinsi Bali menargetkan <strong>Bali Bebas Rabies 2028</strong>, didukung Kementan &amp; TISIRA (Tim Siaga Rabies).</p>
+        </div>
+        <div class="section-title">Video Edukasi</div>
+        <div class="card" style="margin-bottom:10px;padding:10px;">
+          <div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000;">
+            <iframe src="https://www.youtube.com/embed/SlU3HLn4r4A" title="Video edukasi rabies 1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+        </div>
+        <div class="card" style="padding:10px;">
+          <div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000;">
+            <iframe src="https://www.youtube.com/embed/7RK0aTdkfqQ" title="Video edukasi rabies 2" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
         </div>
       </section>
 
@@ -529,6 +544,15 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
     </div>
   </div>
 </div>
+
+<!-- MODAL: DETAIL (Hewan / Laporan) -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal-box">
+    <button class="modal-close" data-close-modal type="button">&times;</button>
+    <div id="modal-detail-body"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
@@ -1031,7 +1055,7 @@ const RaconMap = (function(){
     const map = ensureMap(mountId, [-8.42, 115.30], 9, false);
     if(!map) return;
     (cases||[]).forEach(function(c){
-      if(typeof c.lat !== 'number' || typeof c.lng !== 'number') return;
+      if(typeof c.lat !== 'number' || typeof c.lng !== 'number' || isNaN(c.lat) || isNaN(c.lng)) return;
       const marker = L.marker([c.lat, c.lng], {icon: dogMarkerIcon(statusColor(c.status), c.status==='Baru')}).addTo(map);
       const popupHtml = '<div class="rc-popup"><h5>'+Utils.escapeHtml(c.caseType||'Laporan Kasus')+'</h5>'+
         '<div class="row"><span>Lokasi</span><b>'+Utils.escapeHtml(c.banjarDesa||'-')+', '+Utils.escapeHtml(c.kabupaten||'-')+'</b></div>'+
@@ -1055,10 +1079,9 @@ function myFilter(list){
 
 function renderWargaHome(){
   const myPets = myFilter(PetEngine.all());
-  const cases = CaseEngine.all();
+  const myCases = myFilter(CaseEngine.all());
   Utils.countUpEl('w-my-pets-count', myPets.length);
-  const recent = cases.filter(function(c){ return Utils.daysAgo(c.createdAt) <= 30; });
-  Utils.countUpEl('w-nearby-cases-count', recent.length);
+  Utils.countUpEl('w-nearby-cases-count', myCases.length);
 
   const news = StateManager.load('news', []);
   document.getElementById('w-news-list').innerHTML = news.map(function(n){
@@ -1074,7 +1097,7 @@ function renderWargaPets(){
   mount.innerHTML = pets.map(function(p){
     const badgeClass = p.vaccineStatus === 'Belum' ? 'red' : 'green';
     const thumb = p.photoUrl ? '<img src="'+p.photoUrl+'" alt="" style="width:46px;height:46px;object-fit:cover;border-radius:8px;margin-right:10px;flex-shrink:0;">' : '';
-    return '<div class="card" style="margin-bottom:8px;">'+
+    return '<div class="card" data-open-pet="'+Utils.escapeHtml(p.id)+'" style="margin-bottom:8px;cursor:pointer;">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'+
       '<div style="display:flex;">'+thumb+'<div><div style="font-weight:700;font-size:13.5px;">'+Utils.escapeHtml(p.name)+' <span style="font-weight:400;color:var(--muted);font-size:11px;">('+Utils.escapeHtml(p.species)+', '+Utils.escapeHtml(p.sex)+')</span></div>'+
       '<div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Pemilik: '+Utils.escapeHtml(p.ownerName)+'</div>'+
@@ -1098,9 +1121,50 @@ function caseListItemHtml(c){
   const thumb = c.photoUrl ? '<img src="'+c.photoUrl+'" alt="" style="width:34px;height:34px;object-fit:cover;border-radius:6px;margin-right:8px;flex-shrink:0;">' : '';
   const loc = [c.banjarDesa, c.kabupaten].filter(Boolean).join(', ') || '-';
   const photoNote = (c.photoCount && c.photoCount > 1) ? ' · ' + c.photoCount + ' foto' : '';
-  return '<div class="list-item">'+thumb+'<div style="flex:1;"><div class="li-main">'+Utils.escapeHtml(c.caseType)+'</div>'+
+  return '<div class="list-item" data-open-case="'+Utils.escapeHtml(c.id)+'" style="cursor:pointer;">'+thumb+'<div style="flex:1;"><div class="li-main">'+Utils.escapeHtml(c.caseType)+'</div>'+
     '<div class="li-sub">'+Utils.escapeHtml(loc)+' · '+Utils.fmtDate(c.createdAt)+photoNote+'</div></div>'+
     '<span class="badge '+badgeClass+'">'+Utils.escapeHtml(c.status)+'</span></div>';
+}
+
+function detailRow(label, value){
+  if(value === null || value === undefined || value === '') return '';
+  return '<div class="row" style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #EDF1F2;font-size:12.5px;">'+
+    '<span style="color:var(--muted);flex-shrink:0;">'+Utils.escapeHtml(label)+'</span><b style="text-align:right;">'+Utils.escapeHtml(String(value))+'</b></div>';
+}
+
+function openPetDetail(id){
+  const p = PetEngine.all().find(function(x){ return x.id === id; });
+  if(!p) return;
+  const photo = p.photoUrl ? '<img src="'+p.photoUrl+'" alt="" style="width:100%;border-radius:10px;margin-bottom:12px;max-height:220px;object-fit:cover;">' : '';
+  document.getElementById('modal-detail-body').innerHTML =
+    '<h3>'+Utils.escapeHtml(p.name)+'</h3>' + photo +
+    detailRow('Jenis', p.species) +
+    detailRow('Jenis kelamin', p.sex) +
+    detailRow('Status vaksinasi', p.vaccineStatus) +
+    detailRow('Nama pemilik', p.ownerName) +
+    detailRow('Banjar/Desa', p.banjarDesa) +
+    detailRow('Kecamatan', p.kabupaten) +
+    detailRow('Tanggal input', p.createdAt ? Utils.fmtDate(p.createdAt) : '-');
+  openModal('detail');
+}
+
+function openCaseDetail(id){
+  const c = CaseEngine.all().find(function(x){ return x.id === id; });
+  if(!c) return;
+  const photo = c.photoUrl ? '<img src="'+c.photoUrl+'" alt="" style="width:100%;border-radius:10px;margin-bottom:12px;max-height:220px;object-fit:cover;">' : '';
+  const photoNote = (c.photoCount && c.photoCount > 1) ? ' ('+c.photoCount+' foto dilampirkan)' : '';
+  document.getElementById('modal-detail-body').innerHTML =
+    '<h3>'+Utils.escapeHtml(c.caseType)+'</h3>' + photo +
+    detailRow('Status', c.status) +
+    detailRow('Nama pelapor', c.reporterName) +
+    detailRow('Banjar/Desa', c.banjarDesa) +
+    detailRow('Kecamatan', c.kabupaten) +
+    detailRow('Gejala/luka', (c.symptoms && c.symptoms.length) ? c.symptoms.join(', ') : '-') +
+    detailRow('Catatan', c.notes) +
+    detailRow('Lokasi GPS', (typeof c.lat === 'number' && !isNaN(c.lat)) ? (c.lat.toFixed(5)+', '+c.lng.toFixed(5)) : 'Tidak tersedia') +
+    detailRow('Foto', c.photoUrl ? ('Ada'+photoNote) : 'Tidak ada') +
+    detailRow('Tanggal lapor', c.createdAt ? Utils.fmtDate(c.createdAt) : '-');
+  openModal('detail');
 }
 
 function renderWargaRadar(){
@@ -1129,6 +1193,9 @@ function renderWargaFeedback(){
       '<div class="li-sub">'+Utils.escapeHtml(f.message)+' — '+Utils.escapeHtml(f.name||'Anonim')+'</div></div></div>';
   }).join('');
 }
+
+function openModal(id){ const m = document.getElementById('modal-'+id); if(m) m.classList.add('is-active'); }
+function closeAllModals(){ document.querySelectorAll('.modal-overlay').forEach(function(m){ m.classList.remove('is-active'); }); }
 
 function applyAccountUI(){
   const account = Auth.getAccount();
@@ -1211,6 +1278,26 @@ function wireEvents(){
   document.addEventListener('click', function(e){
     const wargaNav = e.target.closest('[data-warga-page-go]');
     if(wargaNav){ Router.gotoPage(wargaNav.getAttribute('data-warga-page-go')); return; }
+
+    const petCard = e.target.closest('[data-open-pet]');
+    if(petCard){ openPetDetail(petCard.getAttribute('data-open-pet')); return; }
+
+    const caseItem = e.target.closest('[data-open-case]');
+    if(caseItem){ openCaseDetail(caseItem.getAttribute('data-open-case')); return; }
+
+    const closeBtn = e.target.closest('[data-close-modal]');
+    if(closeBtn){ closeAllModals(); return; }
+
+    if(e.target.classList && e.target.classList.contains('modal-overlay')){ closeAllModals(); return; }
+  });
+
+  const radarRefreshBtn = document.getElementById('radar-refresh-btn');
+  if(radarRefreshBtn) radarRefreshBtn.addEventListener('click', function(){
+    const statusEl = document.getElementById('radar-sync-status');
+    if(statusEl) statusEl.textContent = 'Memuat data terbaru...';
+    syncAllFromKobo().then(function(){
+      if(statusEl) statusEl.textContent = 'Tersinkron · ' + Utils.fmtDate(Utils.nowISO());
+    });
   });
 
   document.getElementById('register-form').addEventListener('submit', async function(e){
@@ -1296,7 +1383,20 @@ function initKoboFrames(){
   else if(caseFrame){ caseFrame.outerHTML = '<div class="empty-state">Formulir lapor gigitan belum tersedia. Hubungi admin RaCon.</div>'; if(caseNewTab) caseNewTab.classList.add('hidden'); }
 }
 
+function migrateStaleLocalData(){
+  // Bersihkan data pengumuman lama (dari versi sebelumnya) yang mungkin masih
+  // tersimpan di localStorage perangkat ini dan menyebut "Program Dharma".
+  try{
+    const news = StateManager.load('news', []);
+    const hasStale = news.some(function(n){
+      return (n.title && n.title.indexOf('Program Dharma') > -1) || (n.body && n.body.indexOf('Program Dharma') > -1);
+    });
+    if(hasStale) StateManager.save('news', []);
+  }catch(e){ /* localStorage unavailable */ }
+}
+
 function init(){
+  try{ migrateStaleLocalData(); }catch(e){ console.error(e); }
   try{ wireEvents(); }catch(e){ console.error(e); }
   try{ initKoboFrames(); }catch(e){ console.error(e); }
   try{
