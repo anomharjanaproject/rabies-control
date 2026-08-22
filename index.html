@@ -699,7 +699,7 @@ const Auth = (function(){
    -- ini dipakai untuk memfilter "Hewan Saya" / "Laporan Saya" milik perangkat ini saja.
 ============================================================ */
 const KOBO_CONFIG = {
-  serverUrl: 'https://kf.kobotoolbox.org', // <-- GANTI ke URL proxy Cloudflare Worker Anda
+  serverUrl: 'https://rabies-control.anomharjanaproject.workers.dev', // proxy Cloudflare Worker (mengatasi CORS Kobo)
   petForm: {
     assetUid: 'adL2QnAbTuC8atdh8A8xrW',
     enketoUrl: 'https://ee.kobotoolbox.org/x/xXzrpDeU'
