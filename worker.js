@@ -51,12 +51,13 @@ export default {
     }
 
     try {
-      const koboRes = await fetch(koboUrl, { headers });
+      const koboRes = await fetch(koboUrl, { headers, cf: { cacheTtl: 0, cacheEverything: false } });
       const body = await koboRes.text();
       return new Response(body, {
         status: koboRes.status,
         headers: {
           'Content-Type': koboRes.headers.get('Content-Type') || 'application/json',
+          'Cache-Control': 'no-store',
           ...corsHeaders()
         }
       });

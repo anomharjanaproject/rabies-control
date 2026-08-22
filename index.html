@@ -738,8 +738,10 @@ const KoboClient = (function(){
   }
   async function fetchSubmissions(formConf){
     if(!isConfigured(formConf)) return [];
-    const url = KOBO_CONFIG.serverUrl + '/api/v2/assets/' + formConf.assetUid + '/data/?format=json';
-    const res = await fetch(url, { headers: authHeaders() });
+    // Tambahkan penanda waktu (_=timestamp) & cache:'no-store' supaya browser/proxy
+    // tidak menyajikan ulang respons lama yang sudah tersimpan di cache.
+    const url = KOBO_CONFIG.serverUrl + '/api/v2/assets/' + formConf.assetUid + '/data/?format=json&_=' + Date.now();
+    const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
     if(!res.ok) throw new Error('Kobo API merespons status ' + res.status);
     const json = await res.json();
     return json.results || [];
@@ -861,25 +863,52 @@ async function syncPetsFromKobo(){
       const ownerName = r.Nama_Pemilik_Hewan || r.Nama_Penduduk_kepala_keluarga || '-';
       const deviceId = r.device_id || null;
       const animals = getRepeatItems(r, 'group_tc5cy37');
-      animals.forEach(function(a, idx){
-        const jenisHewan = repeatField(a, 'group_tc5cy37', 'Jenis_Hewan');
-        const jenisKelamin = repeatField(a, 'group_tc5cy37', 'Jenis_Kelamin_Hewan');
-        const statusVaksin = repeatField(a, 'group_tc5cy37', 'Status_Vaksinasi_Rabies');
-        const fotoHewan = repeatField(a, 'group_tc5cy37', 'Foto_Hewan');
-        mapped.push({
-          id: (r._uuid || String(r._id)) + '-' + idx,
-          name: titleCase(jenisHewan) + ' #' + (idx+1),
-          species: titleCase(jenisHewan) || '-',
-          sex: jenisKelamin === 'jantan' ? 'Jantan' : (jenisKelamin === 'betina' ? 'Betina' : '-'),
-          ownerName: ownerName,
-          kabupaten: kabupaten,
-          banjarDesa: banjarDesa,
-          vaccineStatus: mapVaccineStatus(statusVaksin),
-          photoUrl: KoboClient.attachmentUrl(r, fotoHewan),
-          deviceId: deviceId,
-          createdAt: r._submission_time || Utils.nowISO()
+      if(animals.length > 0){
+        // Skema form versi "repeat group" -- rincian per ekor hewan
+        animals.forEach(function(a, idx){
+          const jenisHewan = repeatField(a, 'group_tc5cy37', 'Jenis_Hewan');
+          const jenisKelamin = repeatField(a, 'group_tc5cy37', 'Jenis_Kelamin_Hewan');
+          const statusVaksin = repeatField(a, 'group_tc5cy37', 'Status_Vaksinasi_Rabies');
+          const fotoHewan = repeatField(a, 'group_tc5cy37', 'Foto_Hewan');
+          mapped.push({
+            id: (r._uuid || String(r._id)) + '-' + idx,
+            name: titleCase(jenisHewan) + ' #' + (idx+1),
+            species: titleCase(jenisHewan) || '-',
+            sex: jenisKelamin === 'jantan' ? 'Jantan' : (jenisKelamin === 'betina' ? 'Betina' : '-'),
+            ownerName: ownerName,
+            kabupaten: kabupaten,
+            banjarDesa: banjarDesa,
+            vaccineStatus: mapVaccineStatus(statusVaksin),
+            photoUrl: KoboClient.attachmentUrl(r, fotoHewan),
+            deviceId: deviceId,
+            createdAt: r._submission_time || Utils.nowISO()
+          });
         });
-      });
+      } else if(r.Jumlah_Total_Anjing_yang_dipelihara !== undefined || r.Jumlah_Total_Kucing_yang_dipelihara !== undefined){
+        // Skema form versi "agregat rumah tangga" (tanpa rincian per ekor) --
+        // dibuatkan 1 kartu ringkasan per jenis hewan supaya tetap tampil.
+        [
+          { species:'Anjing', total:r.Jumlah_Total_Anjing_yang_dipelihara, belum:r.Jumlah_anjing_yang_B_sin_rabies_tahun_ini },
+          { species:'Kucing', total:r.Jumlah_Total_Kucing_yang_dipelihara, belum:r.Jumlah_kucing_yang_B_sin_rabies_tahun_ini }
+        ].forEach(function(g){
+          const total = Number(g.total) || 0;
+          if(total <= 0) return;
+          const belum = Number(g.belum) || 0;
+          mapped.push({
+            id: (r._uuid || String(r._id)) + '-agg-' + g.species,
+            name: g.species + ' (' + total + ' ekor, data agregat)',
+            species: g.species,
+            sex: '-',
+            ownerName: ownerName,
+            kabupaten: kabupaten,
+            banjarDesa: banjarDesa,
+            vaccineStatus: belum > 0 ? 'Belum' : 'Tervaksin',
+            photoUrl: KoboClient.attachmentUrl(r, r.Foto_gerbang_rumah),
+            deviceId: deviceId,
+            createdAt: r._submission_time || Utils.nowISO()
+          });
+        });
+      }
     });
     mapped.sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
     StateManager.save('pets', mapped);
