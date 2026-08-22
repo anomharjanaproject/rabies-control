@@ -466,10 +466,11 @@ h4 .icon{width:16px;height:16px;margin-right:5px;vertical-align:-3px;color:var(-
             <span><i class="dot" style="background:var(--green);"></i>Selesai</span>
           </div>
         </div>
-        <div style="display:flex;gap:8px;margin:8px 0 4px;">
+        <div style="display:flex;gap:8px;margin:8px 0 4px;align-items:center;flex-wrap:wrap;">
           <button type="button" class="btn outline sm" id="radar-refresh-btn">Muat Ulang Peta</button>
-          <span id="radar-sync-status" style="font-size:10.5px;color:var(--muted);align-self:center;"></span>
+          <span id="radar-sync-status" style="font-size:10.5px;color:var(--muted);"></span>
         </div>
+        <div id="radar-geo-note" style="font-size:11px;color:var(--muted);margin-bottom:10px;"></div>
 
         <div class="section-title">Layanan Terdekat (Nearest Vet / VAR)</div>
         <div id="w-vet-list"></div>
@@ -1168,7 +1169,15 @@ function openCaseDetail(id){
 }
 
 function renderWargaRadar(){
-  RaconMap.render('w-map-mount', CaseEngine.all());
+  const cases = CaseEngine.all();
+  RaconMap.render('w-map-mount', cases);
+  const withGeo = cases.filter(function(c){ return typeof c.lat === 'number' && !isNaN(c.lat); }).length;
+  const geoNoteEl = document.getElementById('radar-geo-note');
+  if(geoNoteEl){
+    geoNoteEl.textContent = cases.length === 0
+      ? 'Belum ada laporan.'
+      : withGeo + ' dari ' + cases.length + ' laporan memiliki titik lokasi GPS dan tampil di peta.';
+  }
   const mount = document.getElementById('w-vet-list');
   const vets = [
     {name:'Puskesmas Terdekat', kind:'Layanan VAR / gigitan manusia', note:'Cari Puskesmas kecamatan terdekat dari lokasi Anda', query:'puskesmas terdekat'},
@@ -1264,7 +1273,10 @@ const Router = (function(){
     if(pageName==='home') renderWargaHome();
     if(pageName==='pets') renderWargaPets();
     if(pageName==='report') renderWargaReports();
-    if(pageName==='radar') renderWargaRadar();
+    if(pageName==='radar'){
+      renderWargaRadar(); // render cepat pakai cache dulu
+      syncAllFromKobo();  // lalu tarik data terbaru dari Kobo & re-render
+    }
     if(pageName==='profile') renderWargaFeedback();
   }
 
