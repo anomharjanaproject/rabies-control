@@ -96,6 +96,13 @@ table.data-table tr:nth-child(even) td:first-child{background:#FAFCFD;}
 
 .empty-state{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;}
 
+/* Footer credit */
+.footer-credit{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:32px;padding:20px 0 4px;border-top:1px solid var(--line);}
+.footer-credit span{font-size:11.5px;color:var(--muted);font-weight:600;}
+.footer-credit a{display:inline-flex;align-items:center;transition:opacity .15s ease;}
+.footer-credit a:hover{opacity:.75;}
+.footer-credit img{height:28px;width:auto;object-fit:contain;}
+
 /* Photo thumbnails */
 .thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;display:block;cursor:pointer;border:1px solid var(--line);background:#EEF2F3;}
 .thumb-empty{width:38px;height:38px;border-radius:8px;background:#EEF2F3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;}
@@ -147,6 +154,7 @@ table.data-table tr:nth-child(even) td:first-child{background:#FAFCFD;}
 @media (max-width:380px){
   .kpi-grid{grid-template-columns:1fr 1fr;}
   .kpi-card .num{font-size:19px;}
+  .footer-credit{flex-direction:column;gap:6px;}
 }
 </style>
 </head>
@@ -250,6 +258,13 @@ table.data-table tr:nth-child(even) td:first-child{background:#FAFCFD;}
     <summary>Tabel Lapor Gigitan <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></summary>
     <div class="table-scroll"><table class="data-table" id="table-gigitan"></table></div>
   </details>
+
+  <div class="footer-credit">
+    <span>Dikembangkan oleh:</span>
+    <a href="https://inovasikesehatan.net/" target="_blank" rel="noopener">
+      <img src="https://res.cloudinary.com/djexglfns/image/upload/v1766188729/logo_cphi_g9pyf2.png" alt="Logo CPHI - Center for Public Health Innovation">
+    </a>
+  </div>
 
 </div>
 
