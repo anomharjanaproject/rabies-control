@@ -1055,18 +1055,51 @@ const RaconMap = (function(){
   function render(mountId, cases){
     const map = ensureMap(mountId, [-8.42, 115.30], 9, false);
     if(!map) return;
-    (cases||[]).forEach(function(c){
-      if(typeof c.lat !== 'number' || typeof c.lng !== 'number' || isNaN(c.lat) || isNaN(c.lng)) return;
-      const marker = L.marker([c.lat, c.lng], {icon: dogMarkerIcon(statusColor(c.status), c.status==='Baru')}).addTo(map);
-      const popupHtml = '<div class="rc-popup"><h5>'+Utils.escapeHtml(c.caseType||'Laporan Kasus')+'</h5>'+
-        '<div class="row"><span>Lokasi</span><b>'+Utils.escapeHtml(c.banjarDesa||'-')+', '+Utils.escapeHtml(c.kabupaten||'-')+'</b></div>'+
-        '<div class="row"><span>Status</span><b>'+Utils.escapeHtml(c.status||'-')+'</b></div>'+
-        '<div class="row"><span>Tanggal</span><b>'+(c.createdAt?Utils.fmtDate(c.createdAt):'-')+'</b></div>'+
-        (c.reporterName ? '<div class="row"><span>Pelapor</span><b>'+Utils.escapeHtml(c.reporterName)+'</b></div>' : '')+
-        '</div>';
-      marker.bindPopup(popupHtml);
+    const valid = (cases||[]).filter(function(c){
+      return typeof c.lat === 'number' && typeof c.lng === 'number' && !isNaN(c.lat) && !isNaN(c.lng);
     });
+
+    // Kelompokkan titik yang koordinatnya nyaris sama (±~10m) supaya pin yang
+    // menumpuk persis tetap terlihat semua & bisa diklik satu-satu -- posisi
+    // digeser sedikit hanya untuk tampilan peta, data asli tetap utuh di popup.
+    const groups = {};
+    valid.forEach(function(c){
+      const key = c.lat.toFixed(4) + ',' + c.lng.toFixed(4);
+      (groups[key] = groups[key] || []).push(c);
+    });
+
+    const markerLatLngs = [];
+    Object.keys(groups).forEach(function(key){
+      const group = groups[key];
+      group.forEach(function(c, idx){
+        let lat = c.lat, lng = c.lng;
+        if(group.length > 1){
+          const angle = (2 * Math.PI * idx) / group.length;
+          const radius = 0.0009; // ~90-100m, cukup untuk memisahkan pin di peta
+          lat += radius * Math.cos(angle);
+          lng += radius * Math.sin(angle);
+        }
+        const marker = L.marker([lat, lng], {icon: dogMarkerIcon(statusColor(c.status), c.status==='Baru')}).addTo(map);
+        const popupHtml = '<div class="rc-popup"><h5>'+Utils.escapeHtml(c.caseType||'Laporan Kasus')+'</h5>'+
+          '<div class="row"><span>Lokasi</span><b>'+Utils.escapeHtml(c.banjarDesa||'-')+', '+Utils.escapeHtml(c.kabupaten||'-')+'</b></div>'+
+          '<div class="row"><span>Status</span><b>'+Utils.escapeHtml(c.status||'-')+'</b></div>'+
+          '<div class="row"><span>Tanggal</span><b>'+(c.createdAt?Utils.fmtDate(c.createdAt):'-')+'</b></div>'+
+          (c.reporterName ? '<div class="row"><span>Pelapor</span><b>'+Utils.escapeHtml(c.reporterName)+'</b></div>' : '')+
+          '</div>';
+        marker.bindPopup(popupHtml);
+        markerLatLngs.push([lat, lng]);
+      });
+    });
+
+    // Otomatis zoom menyesuaikan sebaran titik yang benar-benar ada datanya,
+    // supaya titik yang berdekatan tidak tampak menumpuk jadi satu.
+    if(markerLatLngs.length === 1){
+      map.setView(markerLatLngs[0], 14);
+    } else if(markerLatLngs.length > 1){
+      map.fitBounds(markerLatLngs, {padding:[30,30], maxZoom:15});
+    }
   }
+
   return { render };
 })();
 /* ============================================================
