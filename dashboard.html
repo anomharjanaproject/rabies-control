@@ -83,13 +83,40 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Hel
 table.data-table{border-collapse:collapse;width:100%;font-size:11.5px;white-space:nowrap;}
 table.data-table th{position:sticky;top:0;background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-weight:700;z-index:2;}
 table.data-table td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--ink);}
+table.data-table th:first-child, table.data-table td:first-child{position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.04);}
+table.data-table th:first-child{background:var(--navy);z-index:3;}
 table.data-table tr:nth-child(even) td{background:#FAFCFD;}
+table.data-table th:first-child, table.data-table td:first-child{position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.04);}
+table.data-table th:first-child{background:var(--navy);z-index:3;}
+table.data-table tr:nth-child(even) td:first-child{background:#FAFCFD;}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;}
 .badge.red{background:#FBE7E5;color:var(--red);}
 .badge.green{background:#E4F1EB;color:var(--green);}
 .badge.gold{background:#FCEFDA;color:var(--gold-dark);}
 
 .empty-state{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;}
+
+/* Photo thumbnails */
+.thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;display:block;cursor:pointer;border:1px solid var(--line);background:#EEF2F3;}
+.thumb-empty{width:38px;height:38px;border-radius:8px;background:#EEF2F3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;}
+.row-clickable{cursor:pointer;}
+.row-clickable:hover td{background:#F0F6F8 !important;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,30,45,.6);display:none;align-items:center;justify-content:center;z-index:5000;padding:16px;}
+.modal-overlay.is-active{display:flex;}
+.modal-box{background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;padding:22px;position:relative;}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:0;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:4px;}
+.modal-box h3{margin:0 18px 14px 0;font-size:16px;color:var(--navy);}
+.modal-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #EDF1F2;font-size:12.5px;}
+.modal-row span{color:var(--muted);flex-shrink:0;}
+.modal-row b{text-align:right;}
+.modal-gallery{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.modal-gallery img{width:96px;height:96px;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid var(--line);}
+.modal-gallery .gallery-label{width:100%;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin:6px 0 2px;}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:6000;padding:20px;}
+.lightbox.is-active{display:flex;}
+.lightbox img{max-width:100%;max-height:90vh;border-radius:8px;}
 
 @media (max-width:1100px){
   .kpi-grid{grid-template-columns:repeat(3,1fr);}
@@ -100,8 +127,26 @@ table.data-table tr:nth-child(even) td{background:#FAFCFD;}
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .chart-grid{grid-template-columns:1fr;}
   .chart-card.span2{grid-column:span 1;}
-  .wrap{padding:16px 12px 40px;}
+  .wrap{padding:14px 10px 40px;}
   table.data-table{font-size:10.5px;}
+  .topbar{padding:12px 14px;}
+  .topbar .brand{font-size:14.5px;}
+  .topbar .brand .tag{display:none;}
+  .topbar .status{width:100%;justify-content:space-between;}
+  .filter-bar{padding:12px 14px;gap:10px;}
+  .filter-field, .filter-field select{min-width:0;flex:1 1 140px;width:100%;}
+  .filter-note{order:99;font-size:10.5px;}
+  .kpi-card .num{font-size:21px;}
+  .kpi-card{padding:12px 12px 11px;}
+  .chart-card .canvas-wrap{height:170px;}
+  #dash-map{height:300px;}
+  .modal-box{padding:18px 16px;border-radius:14px;max-height:85vh;}
+  .modal-gallery img{width:78px;height:78px;}
+  .section-head h2{font-size:14.5px;}
+}
+@media (max-width:380px){
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .kpi-card .num{font-size:19px;}
 }
 </style>
 </head>
@@ -208,8 +253,20 @@ table.data-table tr:nth-child(even) td{background:#FAFCFD;}
 
 </div>
 
+<!-- MODAL: DETAIL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close-btn" type="button">&times;</button>
+    <div id="modal-detail-body"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX: FOTO PENUH -->
+<div class="lightbox" id="lightbox"><img id="lightbox-img" src="" alt=""></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
 (function(){
 "use strict";
@@ -334,6 +391,7 @@ function mapPetSubmission(r){
         species: titleCase(repeatField(a,'group_tc5cy37','Jenis_Hewan')),
         sex: repeatField(a,'group_tc5cy37','Jenis_Kelamin_Hewan') === 'jantan' ? 'Jantan' : (repeatField(a,'group_tc5cy37','Jenis_Kelamin_Hewan') === 'betina' ? 'Betina' : null),
         vaccineStatus: mapVaccineStatus(repeatField(a,'group_tc5cy37','Status_Vaksinasi_Rabies')),
+        photoUrl: KoboClient.attachmentUrl(r, repeatField(a,'group_tc5cy37','Foto_Hewan')),
         source: 'repeat'
       });
     });
@@ -373,6 +431,7 @@ function mapPetSubmission(r){
     diDalamRumah: Number(r.Jumlah_anjing_yang_d_lihara_didalam_rumah)||0,
     ternakLain: r.Jenis_ternak_yang_dipelihara || null,
     isAggregateSchema: repeatAnimals.length === 0,
+    gatePhotoUrl: KoboClient.attachmentUrl(r, r.Foto_gerbang_rumah),
     raw: r
   };
 }
@@ -383,6 +442,9 @@ function mapPetSubmission(r){
 function mapCaseSubmission(r){
   const geo = geoFromSubmission(r);
   const photoItems = getRepeatItems(r, 'group_ml7lo61');
+  const photoUrls = photoItems.map(function(item){
+    return KoboClient.attachmentUrl(r, repeatField(item,'group_ml7lo61','Foto_luka_hewan_pen_si_lain_yang_relevan'));
+  }).filter(Boolean);
   let usia = r.Usia !== undefined ? Number(r.Usia) : null;
   if(usia !== null && isNaN(usia)) usia = null;
   const tglGigitan = r.Tanggal_kejadian_gigitan || null;
@@ -416,6 +478,7 @@ function mapCaseSubmission(r){
     riwayatVaksinHewan: r.Riwayat_vaksinasi_pada_hewan || null,
     lat: geo.lat, lng: geo.lng,
     photoCount: photoItems.length,
+    photoUrls: photoUrls,
     raw: r
   };
 }
@@ -472,7 +535,43 @@ function updateDesaOptions(pets){
 /* ============================================================
    CHART HELPERS
 ============================================================ */
+if(typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined'){
+  Chart.register(ChartDataLabels);
+  // Plugin kustom: menulis total (n) di tengah donut chart.
+  Chart.register({
+    id: 'centerText',
+    beforeDraw: function(chart){
+      const opt = chart.config.options && chart.config.options.plugins && chart.config.options.plugins.centerText;
+      if(!opt || !opt.enabled) return;
+      const ctx = chart.ctx;
+      const area = chart.chartArea;
+      const cx = (area.left + area.right) / 2;
+      const cy = (area.top + area.bottom) / 2;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = "800 21px -apple-system,'Segoe UI',Roboto,sans-serif";
+      ctx.fillStyle = '#0B3D57';
+      ctx.fillText(String(opt.total), cx, cy - 7);
+      ctx.font = "700 9.5px -apple-system,'Segoe UI',Roboto,sans-serif";
+      ctx.fillStyle = '#66787F';
+      ctx.fillText('TOTAL (n)', cx, cy + 11);
+      ctx.restore();
+    }
+  });
+  // Catatan: tiap chart di bawah mengatur plugins.datalabels secara eksplisit
+  // per instance, jadi tidak perlu ubah default global plugin ini.
+}
+
 function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function setChartTitleTotal(el, total, show){
+  const titleEl = el.closest('.chart-card').querySelector('h3');
+  if(!titleEl) return;
+  if(!titleEl.hasAttribute('data-base-title')) titleEl.setAttribute('data-base-title', titleEl.textContent);
+  const base = titleEl.getAttribute('data-base-title');
+  titleEl.textContent = show ? (base + ' — n=' + total.toLocaleString('id-ID')) : base;
+}
 
 function tallyToChart(canvasId, tallyObj, opts){
   destroyChart(canvasId);
@@ -480,17 +579,24 @@ function tallyToChart(canvasId, tallyObj, opts){
   const entries = Object.keys(tallyObj).map(function(k){ return [k, tallyObj[k]]; }).filter(function(e){ return e[1] > 0; });
   entries.sort(function(a,b){ return b[1]-a[1]; });
   const wrap = el.closest('.canvas-wrap');
+  const total = entries.reduce(function(s,e){ return s+e[1]; }, 0);
+  const type = (opts && opts.type) || 'doughnut';
+
   if(entries.length === 0){
     el.style.display = 'none';
     if(!wrap.querySelector('.empty-mini')){
       const d = document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d);
     }
+    setChartTitleTotal(el, 0, false);
     return;
   }
   el.style.display = '';
   const existingEmpty = wrap.querySelector('.empty-mini'); if(existingEmpty) existingEmpty.remove();
 
-  const type = (opts && opts.type) || 'doughnut';
+  // Bar chart: total (n) ditampilkan di judul diagram.
+  // Donut/pie chart: total (n) ditampilkan di tengah diagram (plugin centerText).
+  setChartTitleTotal(el, total, type === 'bar');
+
   charts[canvasId] = new Chart(el.getContext('2d'), {
     type: type,
     data: {
@@ -506,12 +612,27 @@ function tallyToChart(canvasId, tallyObj, opts){
     options: {
       responsive:true, maintainAspectRatio:false,
       indexAxis: (opts && opts.horizontal) ? 'y' : 'x',
+      layout: type==='bar' ? { padding: opts&&opts.horizontal ? {right:38} : {top:22} } : undefined,
       plugins:{
         legend:{ display: type!=='bar', position:'bottom', labels:{boxWidth:10,font:{size:10.5}} },
-        tooltip:{ callbacks: (opts&&opts.percentTooltip) ? { label:function(ctx){
-          const total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+        tooltip:{ callbacks: { label:function(ctx){
           return ctx.label+': '+ctx.parsed+' ('+pct(ctx.parsed,total)+'%)';
-        } } : {} }
+        } } },
+        centerText: { enabled: type !== 'bar', total: total },
+        datalabels: {
+          display: true,
+          color: type==='bar' ? '#0B3D57' : '#fff',
+          anchor: type==='bar' ? 'end' : 'center',
+          align: type==='bar' ? (opts&&opts.horizontal ? 'right' : 'top') : 'center',
+          offset: type==='bar' ? 2 : 0,
+          font: { size: 10, weight:'700' },
+          formatter: function(value){
+            const p = pct(value, total);
+            if(type==='bar') return value + ' (' + p + '%)';
+            if(p < 4) return ''; // sembunyikan label di potongan yang terlalu kecil supaya tidak berhimpitan
+            return [String(value), p+'%'];
+          }
+        }
       },
       scales: type==='bar' ? { x:{ grid:{display:false}, ticks:{font:{size:10}} }, y:{ grid:{color:'#EEF2F3'}, ticks:{font:{size:10}} } } : undefined
     }
@@ -524,15 +645,30 @@ function seriesToLineChart(canvasId, monthTally){
   const months = Object.keys(monthTally).sort();
   const wrap = el.closest('.canvas-wrap');
   const existingEmpty = wrap.querySelector('.empty-mini'); if(existingEmpty) existingEmpty.remove();
-  if(months.length === 0){ el.style.display='none'; const d=document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d); return; }
+  const total = months.reduce(function(s,m){ return s+monthTally[m]; }, 0);
+  if(months.length === 0){
+    el.style.display='none';
+    const d=document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d);
+    setChartTitleTotal(el, 0, false);
+    return;
+  }
   el.style.display='';
+  setChartTitleTotal(el, total, true);
   charts[canvasId] = new Chart(el.getContext('2d'), {
     type:'line',
     data:{
       labels: months.map(function(m){ const [y,mo]=m.split('-'); return fmtMonth(y+'-'+mo+'-01'); }),
       datasets:[{ data: months.map(function(m){ return monthTally[m]; }), borderColor:'#1C7293', backgroundColor:'rgba(28,114,147,.12)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor:'#1C7293' }]
     },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#EEF2F3'}, ticks:{font:{size:10}, precision:0} } } }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ top:20 } },
+      plugins:{
+        legend:{display:false},
+        datalabels:{ display:true, color:'#0B3D57', anchor:'end', align:'top', offset:4, font:{size:10,weight:'700'}, formatter:function(v){ return v; } }
+      },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#EEF2F3'}, ticks:{font:{size:10}, precision:0} } }
+    }
   });
 }
 
@@ -646,12 +782,23 @@ function renderGigitanCharts(cases){
     const wrap = el.closest('.canvas-wrap'); const ex = wrap.querySelector('.empty-mini'); if(ex) ex.remove();
     const labels = usiaBuckets.map(function(b){ return b[2]; });
     const data = labels.map(function(l){ return usiaTally[l]||0; });
-    if(data.every(function(v){return v===0;})){ el.style.display='none'; const d=document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d); return; }
+    const total = data.reduce(function(a,b){return a+b;},0);
+    if(total === 0){ el.style.display='none'; const d=document.createElement('div'); d.className='empty-mini'; d.textContent='Belum ada data'; wrap.appendChild(d); setChartTitleTotal(el, 0, false); return; }
     el.style.display='';
+    setChartTitleTotal(el, total, true);
     charts['chart-usia'] = new Chart(el.getContext('2d'), {
       type:'bar',
       data:{ labels: labels, datasets:[{ data:data, backgroundColor:'#D99A3D', borderRadius:6 }] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#EEF2F3'}, ticks:{precision:0} } } }
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        layout:{ padding:{ top:22 } },
+        plugins:{
+          legend:{display:false},
+          tooltip:{ callbacks:{ label:function(ctx){ return ctx.label+' tahun: '+ctx.parsed.y+' ('+pct(ctx.parsed.y,total)+'%)'; } } },
+          datalabels:{ display:true, color:'#0B3D57', anchor:'end', align:'top', offset:2, font:{size:10,weight:'700'}, formatter:function(v){ return v+' ('+pct(v,total)+'%)'; } }
+        },
+        scales:{ x:{grid:{display:false}}, y:{beginAtZero:true, grid:{color:'#EEF2F3'}, ticks:{precision:0} } }
+      }
     });
   })();
   seriesToLineChart('chart-trend-gigitan', monthTally);
@@ -694,12 +841,18 @@ function renderMap(pets, cases){
 
   const hewanMarkers = petPoints.map(function(p){
     const mk = L.marker([p.lat,p.lng], {icon:dotIcon('#1C7293')});
-    mk.bindPopup('<b>Pendataan Hewan</b><br>'+escapeHtml(p.ownerName)+'<br>'+escapeHtml(titleCase(p.kecamatan))+(p.desa?', '+escapeHtml(titleCase(p.desa)):'')+'<br>'+p.animalCount+' ekor hewan<br>'+fmtDate(p.tanggal));
+    const thumb = petThumbUrl(p);
+    const thumbImg = thumb ? '<img src="'+escapeHtml(thumb)+'" style="width:100%;max-width:180px;height:90px;object-fit:cover;border-radius:6px;margin:6px 0;display:block;">' : '';
+    mk.bindPopup('<div style="min-width:170px;"><b>Pendataan Hewan</b><br>'+escapeHtml(p.ownerName)+'<br>'+escapeHtml(titleCase(p.kecamatan))+(p.desa?', '+escapeHtml(titleCase(p.desa)):'')+'<br>'+p.animalCount+' ekor hewan<br>'+fmtDate(p.tanggal)+thumbImg+
+      '<button onclick="openPetDetail(\''+p.id.replace(/'/g,"\\'")+'\')" style="margin-top:4px;padding:5px 10px;border:0;border-radius:6px;background:#1C7293;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Lihat Detail</button></div>');
     return mk;
   });
   const gigitanMarkers = casePoints.map(function(c){
     const mk = L.marker([c.lat,c.lng], {icon:dotIcon('#C1453D')});
-    mk.bindPopup('<b>Laporan Gigitan</b><br>'+escapeHtml(c.reporterName)+'<br>Hewan: '+escapeHtml(titleCase(c.jenisHewan))+'<br>'+escapeHtml(c.alamat)+'<br>'+fmtDate(c.tanggal));
+    const thumb = c.photoUrls[0];
+    const thumbImg = thumb ? '<img src="'+escapeHtml(thumb)+'" style="width:100%;max-width:180px;height:90px;object-fit:cover;border-radius:6px;margin:6px 0;display:block;">' : '';
+    mk.bindPopup('<div style="min-width:170px;"><b>Laporan Gigitan</b><br>'+escapeHtml(c.reporterName)+'<br>Hewan: '+escapeHtml(titleCase(c.jenisHewan))+'<br>'+escapeHtml(c.alamat)+'<br>'+fmtDate(c.tanggal)+thumbImg+
+      '<button onclick="openCaseDetail(\''+c.id.replace(/'/g,"\\'")+'\')" style="margin-top:4px;padding:5px 10px;border:0;border-radius:6px;background:#C1453D;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Lihat Detail</button></div>');
     return mk;
   });
 
@@ -719,12 +872,24 @@ function renderMap(pets, cases){
 /* ============================================================
    RENDER: TABLES
 ============================================================ */
-function renderTable(tableId, rows, columns){
+function thumbHtml(url){
+  return url ? '<img class="thumb" src="'+escapeHtml(url)+'" alt="foto">' : '<div class="thumb-empty">–</div>';
+}
+function petThumbUrl(p){
+  const animalPhoto = p.animals.find(function(a){ return a.photoUrl; });
+  return (animalPhoto && animalPhoto.photoUrl) || p.gatePhotoUrl || null;
+}
+
+function renderTable(tableId, rows, columns, rowAttrFn){
   const table = document.getElementById(tableId);
   if(rows.length === 0){ table.innerHTML = '<tr><td class="empty-state">Belum ada data untuk filter ini.</td></tr>'; return; }
   let html = '<thead><tr>' + columns.map(function(c){ return '<th>'+escapeHtml(c.label)+'</th>'; }).join('') + '</tr></thead><tbody>';
   rows.forEach(function(r){
-    html += '<tr>' + columns.map(function(c){ return '<td>'+escapeHtml(c.get(r))+'</td>'; }).join('') + '</tr>';
+    const attrs = rowAttrFn ? rowAttrFn(r) : '';
+    html += '<tr class="row-clickable" '+attrs+'>' + columns.map(function(c){
+      const val = c.get(r);
+      return '<td>'+(c.html ? val : escapeHtml(val))+'</td>';
+    }).join('') + '</tr>';
   });
   html += '</tbody>';
   table.innerHTML = html;
@@ -740,6 +905,7 @@ function renderHewanTable(pets){
     }
   });
   renderTable('table-hewan', rows, [
+    { label:'Foto', html:true, get:function(r){ return thumbHtml(r.a && r.a.photoUrl ? r.a.photoUrl : r.p.gatePhotoUrl); } },
     { label:'Tanggal', get:function(r){ return fmtDate(r.p.tanggal); } },
     { label:'Pendata', get:function(r){ return r.p.pendata; } },
     { label:'Pemilik', get:function(r){ return r.p.ownerName; } },
@@ -755,11 +921,12 @@ function renderHewanTable(pets){
     { label:'Di Dalam Rumah', get:function(r){ return r.p.diDalamRumah; } },
     { label:'Ternak Lain', get:function(r){ return r.p.ternakLain ? titleCase(r.p.ternakLain) : '-'; } },
     { label:'GPS', get:function(r){ return (typeof r.p.lat==='number') ? r.p.lat.toFixed(5)+', '+r.p.lng.toFixed(5) : '-'; } }
-  ]);
+  ], function(r){ return 'data-open-pet="'+escapeHtml(r.p.id)+'"'; });
 }
 
 function renderGigitanTable(cases){
   renderTable('table-gigitan', cases, [
+    { label:'Foto', html:true, get:function(c){ return thumbHtml(c.photoUrls[0]); } },
     { label:'Tanggal Lapor', get:function(c){ return fmtDate(c.tanggal); } },
     { label:'Nama Pasien', get:function(c){ return c.reporterName; } },
     { label:'Usia', get:function(c){ return c.usia !== null ? c.usia : '-'; } },
@@ -778,8 +945,86 @@ function renderGigitanTable(cases){
     { label:'Riwayat Vaksin Hewan', get:function(c){ return titleCase(c.riwayatVaksinHewan); } },
     { label:'Jml Foto', get:function(c){ return c.photoCount; } },
     { label:'GPS', get:function(c){ return (typeof c.lat==='number') ? c.lat.toFixed(5)+', '+c.lng.toFixed(5) : '-'; } }
-  ]);
+  ], function(c){ return 'data-open-case="'+escapeHtml(c.id)+'"'; });
 }
+
+/* ============================================================
+   MODAL DETAIL & LIGHTBOX FOTO
+============================================================ */
+function detailRow(label, value){
+  if(value === null || value === undefined || value === '') return '';
+  return '<div class="modal-row"><span>'+escapeHtml(label)+'</span><b>'+escapeHtml(String(value))+'</b></div>';
+}
+function galleryHtml(label, urls){
+  if(!urls || urls.length === 0) return '';
+  return '<div class="gallery-label">'+escapeHtml(label)+'</div><div class="modal-gallery">' +
+    urls.map(function(u){ return '<img src="'+escapeHtml(u)+'" alt="" data-lightbox="'+escapeHtml(u)+'">'; }).join('') +
+    '</div>';
+}
+function openModal(){ document.getElementById('modal-detail').classList.add('is-active'); }
+function closeModal(){ document.getElementById('modal-detail').classList.remove('is-active'); }
+function openLightbox(url){
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('is-active');
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('is-active'); }
+
+function openPetDetail(id){
+  const p = RAW_PETS.find(function(x){ return x.id === id; });
+  if(!p) return;
+  const photos = [];
+  if(p.gatePhotoUrl) photos.push(p.gatePhotoUrl);
+  p.animals.forEach(function(a){ if(a.photoUrl) photos.push(a.photoUrl); });
+  const animalsList = p.animals.length
+    ? p.animals.map(function(a,i){ return (i+1)+'. '+(a.species||'-')+(a.sex?' ('+a.sex+')':'')+' — '+(a.vaccineStatus?a.vaccineStatus+' vaksin':'status vaksin tidak diketahui'); }).join('<br>')
+    : 'Tidak ada rincian per-ekor (data agregat).';
+  document.getElementById('modal-detail-body').innerHTML =
+    '<h3>Pendataan Hewan — '+escapeHtml(p.ownerName)+'</h3>' +
+    galleryHtml('Foto ('+photos.length+')', photos) +
+    detailRow('Tanggal', fmtDate(p.tanggal)) +
+    detailRow('Pendata', p.pendata) +
+    detailRow('Kecamatan', titleCase(p.kecamatan)) +
+    detailRow('Desa/Kelurahan', titleCase(p.desa)) +
+    detailRow('Banjar/Lingkungan', p.banjar) +
+    detailRow('Jumlah Hewan', p.animalCount) +
+    detailRow('Sudah Disteril', p.sterilSudah) +
+    detailRow('Butuh Sterilisasi', p.sterilButuh) +
+    detailRow('Dibiarkan Berkeliaran', p.berkeliaran) +
+    detailRow('Dipelihara di Rumah', p.diDalamRumah) +
+    detailRow('Ternak Lain', p.ternakLain ? titleCase(p.ternakLain) : null) +
+    detailRow('Lokasi GPS', (typeof p.lat==='number') ? p.lat.toFixed(5)+', '+p.lng.toFixed(5) : null) +
+    '<div class="gallery-label" style="margin-top:10px;">Rincian Hewan</div>' +
+    '<div style="font-size:12px;color:var(--ink);line-height:1.7;">'+animalsList+'</div>';
+  openModal();
+}
+
+function openCaseDetail(id){
+  const c = RAW_CASES.find(function(x){ return x.id === id; });
+  if(!c) return;
+  document.getElementById('modal-detail-body').innerHTML =
+    '<h3>Laporan Gigitan — '+escapeHtml(c.reporterName)+'</h3>' +
+    galleryHtml('Foto ('+c.photoUrls.length+')', c.photoUrls) +
+    detailRow('Tanggal Lapor', fmtDate(c.tanggal)) +
+    detailRow('Usia', c.usia !== null ? c.usia : null) +
+    detailRow('Jenis Kelamin', titleCase(c.jenisKelamin)) +
+    detailRow('Alamat', c.alamat) +
+    detailRow('Telepon', c.telepon) +
+    detailRow('Tanggal Kejadian', c.tglGigitan ? fmtDate(c.tglGigitan) : null) +
+    detailRow('Tanggal Berobat', c.tglBerobat ? fmtDate(c.tglBerobat) : null) +
+    detailRow('Jeda ke Faskes', c.jedaHari !== null ? c.jedaHari.toFixed(1)+' hari' : null) +
+    detailRow('Lokasi Gigitan', c.lokasiGigitan.map(function(l){return BODY_LABELS[l]||l;}).join(', ') || null) +
+    detailRow('Jenis Luka', c.jenisLuka.map(function(l){return WOUND_LABELS[l]||l;}).join(', ') || null) +
+    detailRow('Tindakan Pertama', c.tindakanPertama) +
+    detailRow('Rincian Kejadian', c.rincianKejadian) +
+    detailRow('Jenis Hewan', titleCase(c.jenisHewan)) +
+    detailRow('Status Hewan', titleCase(c.statusHewan)) +
+    detailRow('Kondisi Hewan', titleCase(c.kondisiHewan)) +
+    detailRow('Riwayat Vaksin Hewan', titleCase(c.riwayatVaksinHewan)) +
+    detailRow('Lokasi GPS', (typeof c.lat==='number') ? c.lat.toFixed(5)+', '+c.lng.toFixed(5) : null);
+  openModal();
+}
+window.openPetDetail = openPetDetail;
+window.openCaseDetail = openCaseDetail;
 
 /* ============================================================
    RENDER ALL (dipanggil tiap kali data / filter berubah)
@@ -834,6 +1079,24 @@ document.getElementById('f-reset').addEventListener('click', function(){
 });
 document.getElementById('layer-hewan').addEventListener('change', function(){ renderMap(applyFilter(RAW_PETS,RAW_CASES).pets, applyFilter(RAW_PETS,RAW_CASES).cases); });
 document.getElementById('layer-gigitan').addEventListener('change', function(){ renderMap(applyFilter(RAW_PETS,RAW_CASES).pets, applyFilter(RAW_PETS,RAW_CASES).cases); });
+
+document.addEventListener('click', function(e){
+  const lb = e.target.closest('[data-lightbox]');
+  if(lb){ openLightbox(lb.getAttribute('data-lightbox')); return; }
+
+  const petRow = e.target.closest('[data-open-pet]');
+  if(petRow){ openPetDetail(petRow.getAttribute('data-open-pet')); return; }
+
+  const caseRow = e.target.closest('[data-open-case]');
+  if(caseRow){ openCaseDetail(caseRow.getAttribute('data-open-case')); return; }
+
+  if(e.target.id === 'modal-close-btn' || e.target.closest('#modal-close-btn')){ closeModal(); return; }
+  if(e.target.id === 'modal-detail'){ closeModal(); return; }
+  if(e.target.id === 'lightbox'){ closeLightbox(); return; }
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){ closeModal(); closeLightbox(); }
+});
 
 syncData();
 setInterval(syncData, KOBO_CONFIG.refreshIntervalMs);
