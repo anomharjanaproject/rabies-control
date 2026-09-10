@@ -211,7 +211,9 @@ table.data-table tr:nth-child(even) td:first-child{background:#FAFCFD;}
     <div class="chart-card"><h3>Status Sterilisasi</h3><div class="note">Dari submission bertipe data agregat</div><div class="canvas-wrap"><canvas id="chart-steril"></canvas></div></div>
     <div class="chart-card span2"><h3>Sebaran Hewan per Kecamatan</h3><div class="note">Jumlah hewan terdata per kecamatan</div><div class="canvas-wrap"><canvas id="chart-kecamatan"></canvas></div></div>
     <div class="chart-card"><h3>Pola Pemeliharaan</h3><div class="note">Dibiarkan berkeliaran vs di dalam rumah</div><div class="canvas-wrap"><canvas id="chart-roam"></canvas></div></div>
-    <div class="chart-card"><h3>Ternak Lain Dipelihara</h3><div class="note">Selain anjing/kucing</div><div class="canvas-wrap"><canvas id="chart-ternak"></canvas></div></div>
+    <div class="chart-card"><h3>Ternak Lain Dipelihara</h3><div class="note">Jumlah rumah tangga per jenis (selain anjing/kucing)</div><div class="canvas-wrap"><canvas id="chart-ternak"></canvas></div></div>
+    <div class="chart-card"><h3>Populasi Ternak Lain (ekor)</h3><div class="note">&nbsp;</div><div class="canvas-wrap"><canvas id="chart-ternak-populasi"></canvas></div></div>
+    <div class="chart-card"><h3>Kepemilikan Hewan Penular Rabies</h3><div class="note">Anjing / kucing / keduanya per rumah tangga</div><div class="canvas-wrap"><canvas id="chart-kepemilikan-hpr"></canvas></div></div>
     <div class="chart-card span2"><h3>Tren Pendataan per Bulan</h3><div class="note">Jumlah rumah tangga terdata dari waktu ke waktu</div><div class="canvas-wrap"><canvas id="chart-trend-hewan"></canvas></div></div>
     <div class="chart-card"><h3>Kebutuhan Sterilisasi</h3><div class="note">Estimasi ekor yang membutuhkan</div><div class="canvas-wrap"><div class="stat-inline"><div class="big" id="stat-need-steril">–</div><div class="lbl2">ekor membutuhkan sterilisasi</div></div></div></div>
   </div>
@@ -339,6 +341,28 @@ function geoFromSubmission(r){
     const lat = Number(r._geolocation[0]), lng = Number(r._geolocation[1]);
     if(!isNaN(lat) && !isNaN(lng)) return { lat: lat, lng: lng };
   }
+  // Fallback: form ini punya 2 pertanyaan geopoint (Klik_lokasi_anda_GPS & Lokasi_GPS).
+  // Kalau _geolocation tidak terisi otomatis oleh API, coba baca langsung kolom lat/lng-nya.
+  const geoFieldPairs = [
+    ['_Klik_lokasi_anda_GPS_latitude', '_Klik_lokasi_anda_GPS_longitude'],
+    ['_Lokasi_GPS_latitude', '_Lokasi_GPS_longitude']
+  ];
+  for(let i=0;i<geoFieldPairs.length;i++){
+    const latKey = geoFieldPairs[i][0], lngKey = geoFieldPairs[i][1];
+    if(r[latKey] !== undefined && r[latKey] !== null && r[latKey] !== ''){
+      const lat = Number(r[latKey]), lng = Number(r[lngKey]);
+      if(!isNaN(lat) && !isNaN(lng)) return { lat: lat, lng: lng };
+    }
+  }
+  // Fallback lain: value geopoint mentah "lat lon alt acc" (dipisah spasi) langsung di field induk.
+  const rawGeoFields = ['Klik_lokasi_anda_GPS', 'Lokasi_GPS'];
+  for(let i=0;i<rawGeoFields.length;i++){
+    const raw = r[rawGeoFields[i]];
+    if(typeof raw === 'string' && raw.trim()){
+      const parts = raw.trim().split(/\s+/).map(Number);
+      if(parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) return { lat: parts[0], lng: parts[1] };
+    }
+  }
   return { lat: null, lng: null };
 }
 function pickDesaKelurahan(r){
@@ -348,6 +372,52 @@ function pickDesaKelurahan(r){
 function mapVaccineStatus(code){
   if(!code) return null;
   return code.toLowerCase().indexOf('belum') > -1 ? 'Belum' : 'Sudah';
+}
+
+/* Konfigurasi eksplisit nama kolom per spesies pada skema agregat.
+   PENTING: nama kolom kucing di form TIDAK konsisten dengan anjing
+   (mis. "Jumlah_total_kucing..." huruf kecil semua vs
+   "Jumlah_Total_Anjing..." huruf kapital), jadi tidak bisa dibangun
+   otomatis dari template string — harus didaftarkan manual di sini
+   supaya seluruh data kucing ikut terhitung. */
+const SPECIES_FIELD_CONFIG = {
+  Anjing: {
+    total: 'Jumlah_Total_Anjing_yang_dipelihara',
+    jantan: 'Jumlah_anjing_jantan',
+    betina: 'Jumlah_anjing_betina',
+    vaxSudah: 'Jumlah_anjing_yang_S_sin_rabies_tahun_ini',
+    vaxBelum: 'Jumlah_anjing_yang_B_sin_rabies_tahun_ini',
+    sterilSudah: 'Jumlah_anjing_yang_SUDAH_disteril',
+    sterilButuh: 'Jumlah_anjing_yang_M_BUTUHKAN_sterilisasi',
+    berkeliaran: 'Jumlah_anjing_yang_dibiarkan_berkeliaran',
+    diDalamRumah: 'Jumlah_anjing_yang_d_lihara_didalam_rumah'
+  },
+  Kucing: {
+    total: 'Jumlah_total_kucing_yang_dipelihara',
+    jantan: 'Jumlah_kucing_jantan',
+    betina: 'Jumlah_kucing_betina',
+    vaxSudah: 'Jumlah_kucing_yang_S_sin_rabies_tahun_ini',
+    vaxBelum: 'Jumlah_kucing_yang_B_sin_rabies_tahun_ini',
+    sterilSudah: 'Jumlah_kucing_yang_sudah_disteril',
+    sterilButuh: 'Jumlah_kucing_yang_M_BUTUHKAN_sterilisasi',
+    berkeliaran: 'Jumlah_kucing_yang_dibiarkan_berkeliaran',
+    diDalamRumah: 'Jumlah_kucing_yang_d_lihara_didalam_rumah'
+  }
+};
+
+const TERNAK_FIELDS = [
+  { key:'sapi', label:'Sapi', countField:'Jumlah_sapi_yang_dipelihara' },
+  { key:'babi', label:'Babi', countField:'Jumlah_babi_yang_dipelihara' },
+  { key:'kambing', label:'Kambing', countField:'Jumlah_kambing_yang_dipelihara' },
+  { key:'ayam', label:'Ayam', countField:'Jumlah_ayam_yang_dipelihara' },
+  { key:'itik', label:'Itik', countField:'Jumlah_itik_yang_dipelihara' }
+];
+
+function validationStatusLabel(v){
+  if(!v) return null;
+  if(typeof v === 'string') return v;
+  if(typeof v === 'object' && v.label) return v.label;
+  return null;
 }
 
 /* ============================================================
@@ -397,7 +467,14 @@ function mapPetSubmission(r){
   const ownerName = r.Nama_Pemilik_Hewan || r.Nama_Penduduk_kepala_keluarga || '-';
   const pendata = r.Nama_Pendata || '-';
   const tanggal = r.Tanggal_Pencatatan || r.Tanggal_kunjungan || r._submission_time;
+  const telepon = r.Nomor_HP || null;
+  const housingComplex = r.Nama_Perumahan_jika_ada || null;
   const animals = [];
+
+  // Total & rincian per spesies (dipakai untuk KPI/chart "sudah disteril", "berkeliaran", dst.
+  // yang harus menjumlahkan anjing + kucing, bukan anjing saja).
+  const bySpecies = {};
+  let sterilSudah=0, sterilButuh=0, berkeliaran=0, diDalamRumah=0;
 
   const repeatAnimals = getRepeatItems(r, 'group_tc5cy37');
   if(repeatAnimals.length > 0){
@@ -411,42 +488,77 @@ function mapPetSubmission(r){
       });
     });
   } else {
-    ['Anjing','Kucing'].forEach(function(sp){
-      const total = Number(r['Jumlah_Total_'+sp+'_yang_dipelihara']) || 0;
+    Object.keys(SPECIES_FIELD_CONFIG).forEach(function(sp){
+      const cfg = SPECIES_FIELD_CONFIG[sp];
+      const total = Number(r[cfg.total]) || 0;
+      const jantan = Number(r[cfg.jantan]) || 0;
+      const betina = Number(r[cfg.betina]) || 0;
+      const vaxSudah = Number(r[cfg.vaxSudah]) || 0;
+      const vaxBelum = Number(r[cfg.vaxBelum]) || 0;
+      const spSterilSudah = Number(r[cfg.sterilSudah]) || 0;
+      const spSterilButuh = Number(r[cfg.sterilButuh]) || 0;
+      const spBerkeliaran = Number(r[cfg.berkeliaran]) || 0;
+      const spDiDalamRumah = Number(r[cfg.diDalamRumah]) || 0;
+
+      bySpecies[sp] = { total: total, jantan: jantan, betina: betina, vaxSudah: vaxSudah, vaxBelum: vaxBelum,
+        sterilSudah: spSterilSudah, sterilButuh: spSterilButuh, berkeliaran: spBerkeliaran, diDalamRumah: spDiDalamRumah };
+      sterilSudah += spSterilSudah; sterilButuh += spSterilButuh;
+      berkeliaran += spBerkeliaran; diDalamRumah += spDiDalamRumah;
+
       if(total <= 0) return;
-      const jantan = Number(r['Jumlah_'+sp.toLowerCase()+'_jantan']) || 0;
-      const betina = Number(r['Jumlah_'+sp.toLowerCase()+'_betina']) || 0;
-      const sudah = Number(r['Jumlah_'+sp.toLowerCase()+'_yang_S_sin_rabies_tahun_ini']) || 0;
-      const belum = Number(r['Jumlah_'+sp.toLowerCase()+'_yang_B_sin_rabies_tahun_ini']) || 0;
       for(let i=0;i<total;i++){
         animals.push({
           species: sp,
           sex: i < jantan ? 'Jantan' : (i < jantan+betina ? 'Betina' : null),
-          vaccineStatus: i < sudah ? 'Sudah' : (i < sudah+belum ? 'Belum' : null),
+          vaccineStatus: i < vaxSudah ? 'Sudah' : (i < vaxSudah+vaxBelum ? 'Belum' : null),
           source: 'aggregate'
         });
       }
     });
   }
 
+  // Ternak lain: tipe yang dipilih (select_multiple) + jumlah ekor per jenis.
+  const ternakRaw = String(r.Jenis_ternak_yang_dipelihara || '').split(' ').filter(Boolean);
+  const tidakMemeliharaTernak = ternakRaw.indexOf('tidak_memelihara_ternak') > -1;
+  const ternakTypes = ternakRaw.filter(function(t){ return t !== 'tidak_memelihara_ternak'; });
+  const ternakCounts = {};
+  TERNAK_FIELDS.forEach(function(t){ ternakCounts[t.key] = Number(r[t.countField]) || 0; });
+
+  // Kepemilikan hewan penular rabies (HPR): select_multiple ini datang dari API Kobo
+  // sebagai satu string dipisah spasi (mis. "anjing kucing"), sama seperti Jenis_ternak_yang_dipelihara.
+  // (Kolom "Jenis_Hewan_Penular_Rabies_HP/anjing" hanya muncul di hasil ekspor XLSX, bukan di API live.)
+  const hpRaw = String(r.Jenis_Hewan_Penular_Rabies_HP || '').split(' ').filter(Boolean);
+  const ownsHP = {
+    anjing: hpRaw.indexOf('anjing') > -1,
+    kucing: hpRaw.indexOf('kucing') > -1
+  };
+
   return {
     id: r._uuid || String(r._id),
     tanggal: tanggal,
     pendata: pendata,
     ownerName: ownerName,
+    telepon: telepon,
+    housingComplex: housingComplex,
     kecamatan: kecamatan,
     desa: desa,
     banjar: banjar,
     lat: geo.lat, lng: geo.lng,
     animals: animals,
     animalCount: animals.length,
-    sterilSudah: Number(r.Jumlah_anjing_yang_SUDAH_disteril)||0,
-    sterilButuh: Number(r.Jumlah_anjing_yang_M_BUTUHKAN_sterilisasi)||0,
-    berkeliaran: Number(r.Jumlah_anjing_yang_dibiarkan_berkeliaran)||0,
-    diDalamRumah: Number(r.Jumlah_anjing_yang_d_lihara_didalam_rumah)||0,
-    ternakLain: r.Jenis_ternak_yang_dipelihara || null,
+    bySpecies: bySpecies,
+    sterilSudah: sterilSudah,
+    sterilButuh: sterilButuh,
+    berkeliaran: berkeliaran,
+    diDalamRumah: diDalamRumah,
+    ternakLain: ternakTypes.length ? ternakTypes.join(' ') : null,
+    ternakTypes: ternakTypes,
+    ternakCounts: ternakCounts,
+    tidakMemeliharaTernak: tidakMemeliharaTernak,
+    ownsHP: ownsHP,
+    validationStatus: validationStatusLabel(r._validation_status),
     isAggregateSchema: repeatAnimals.length === 0,
-    gatePhotoUrl: KoboClient.attachmentUrl(r, r.Foto_gerbang_rumah),
+    gatePhotoUrl: KoboClient.attachmentUrl(r, r.Foto_gerbang_rumah) || r.Foto_gerbang_rumah_URL || null,
     raw: r
   };
 }
@@ -722,16 +834,28 @@ function renderKPI(pets, cases){
 /* ============================================================
    RENDER: HEWAN CHARTS
 ============================================================ */
+const TERNAK_LABELS = { sapi:'Sapi', babi:'Babi', kambing:'Kambing', ayam:'Ayam', itik:'Itik' };
+const HPR_OWNERSHIP_LABELS = { anjing:'Hanya Anjing', kucing:'Hanya Kucing', keduanya:'Anjing & Kucing', tidak_ada:'Tidak Memelihara HPR' };
+
 function renderHewanCharts(pets){
   document.getElementById('hewan-count-badge').textContent = pets.length;
 
   const speciesTally = {}, sexTally = {}, vaxTally = {}, sterilTally = {}, roamTally = {}, kecTally = {}, ternakTally = {};
+  const ternakPopulasiTally = {}, ownershipTally = {};
   const monthTally = {};
-  let sterilButuhTotal = 0;
+  let sterilButuhTotal = 0, tidakTernakCount = 0;
 
   pets.forEach(function(p){
     if(p.kecamatan) kecTally[p.kecamatan] = (kecTally[p.kecamatan]||0) + p.animalCount;
-    if(p.ternakLain) String(p.ternakLain).split(' ').filter(Boolean).forEach(function(t){ ternakTally[t] = (ternakTally[t]||0)+1; });
+    p.ternakTypes.forEach(function(t){ ternakTally[t] = (ternakTally[t]||0)+1; });
+    if(p.tidakMemeliharaTernak) tidakTernakCount++;
+    TERNAK_FIELDS.forEach(function(t){
+      const n = p.ternakCounts[t.key] || 0;
+      if(n > 0) ternakPopulasiTally[t.key] = (ternakPopulasiTally[t.key]||0) + n;
+    });
+    const ownsDog = p.ownsHP.anjing, ownsCat = p.ownsHP.kucing;
+    const ownKey = ownsDog && ownsCat ? 'keduanya' : (ownsDog ? 'anjing' : (ownsCat ? 'kucing' : 'tidak_ada'));
+    ownershipTally[ownKey] = (ownershipTally[ownKey]||0) + 1;
     if(p.isAggregateSchema){
       sterilTally['Sudah disteril'] = (sterilTally['Sudah disteril']||0) + p.sterilSudah;
       sterilTally['Membutuhkan sterilisasi'] = (sterilTally['Membutuhkan sterilisasi']||0) + p.sterilButuh;
@@ -753,9 +877,13 @@ function renderHewanCharts(pets){
   tallyToChart('chart-steril', sterilTally, {percentTooltip:true});
   tallyToChart('chart-kecamatan', kecTally, {type:'bar'});
   tallyToChart('chart-roam', roamTally, {percentTooltip:true});
-  tallyToChart('chart-ternak', ternakTally, {type:'bar', horizontal:true});
+  tallyToChart('chart-ternak', ternakTally, {type:'bar', horizontal:true, labelMap:TERNAK_LABELS});
+  tallyToChart('chart-ternak-populasi', ternakPopulasiTally, {type:'bar', labelMap:TERNAK_LABELS});
+  tallyToChart('chart-kepemilikan-hpr', ownershipTally, {percentTooltip:true, labelMap:HPR_OWNERSHIP_LABELS});
   seriesToLineChart('chart-trend-hewan', monthTally);
   document.getElementById('stat-need-steril').textContent = sterilButuhTotal.toLocaleString('id-ID');
+  const ternakNote = document.querySelector('#chart-ternak-populasi').closest('.chart-card').querySelector('.note');
+  if(ternakNote) ternakNote.textContent = tidakTernakCount + ' dari ' + pets.length + ' rumah tangga tidak memelihara ternak lain';
 }
 
 /* ============================================================
@@ -924,17 +1052,20 @@ function renderHewanTable(pets){
     { label:'Tanggal', get:function(r){ return fmtDate(r.p.tanggal); } },
     { label:'Pendata', get:function(r){ return r.p.pendata; } },
     { label:'Pemilik', get:function(r){ return r.p.ownerName; } },
+    { label:'No. HP', get:function(r){ return r.p.telepon || '-'; } },
+    { label:'Perumahan', get:function(r){ return r.p.housingComplex || '-'; } },
     { label:'Kecamatan', get:function(r){ return titleCase(r.p.kecamatan); } },
     { label:'Desa/Kelurahan', get:function(r){ return titleCase(r.p.desa); } },
     { label:'Banjar/Lingkungan', get:function(r){ return r.p.banjar || '-'; } },
     { label:'Jenis Hewan', get:function(r){ return r.a ? r.a.species : '-'; } },
     { label:'Jenis Kelamin', get:function(r){ return r.a && r.a.sex ? r.a.sex : '-'; } },
     { label:'Status Vaksin', get:function(r){ return r.a && r.a.vaccineStatus ? r.a.vaccineStatus : '-'; } },
-    { label:'Sudah Disteril', get:function(r){ return r.p.sterilSudah; } },
-    { label:'Butuh Sterilisasi', get:function(r){ return r.p.sterilButuh; } },
-    { label:'Berkeliaran', get:function(r){ return r.p.berkeliaran; } },
-    { label:'Di Dalam Rumah', get:function(r){ return r.p.diDalamRumah; } },
-    { label:'Ternak Lain', get:function(r){ return r.p.ternakLain ? titleCase(r.p.ternakLain) : '-'; } },
+    { label:'Sudah Disteril (Anjing+Kucing)', get:function(r){ return r.p.sterilSudah; } },
+    { label:'Butuh Sterilisasi (Anjing+Kucing)', get:function(r){ return r.p.sterilButuh; } },
+    { label:'Berkeliaran (Anjing+Kucing)', get:function(r){ return r.p.berkeliaran; } },
+    { label:'Di Dalam Rumah (Anjing+Kucing)', get:function(r){ return r.p.diDalamRumah; } },
+    { label:'Ternak Lain', get:function(r){ return r.p.ternakTypes.length ? r.p.ternakTypes.map(function(t){return TERNAK_LABELS[t]||titleCase(t);}).join(', ') : (r.p.tidakMemeliharaTernak ? 'Tidak ada' : '-'); } },
+    { label:'Validasi', get:function(r){ return r.p.validationStatus || 'Belum divalidasi'; } },
     { label:'GPS', get:function(r){ return (typeof r.p.lat==='number') ? r.p.lat.toFixed(5)+', '+r.p.lng.toFixed(5) : '-'; } }
   ], function(r){ return 'data-open-pet="'+escapeHtml(r.p.id)+'"'; });
 }
@@ -998,15 +1129,20 @@ function openPetDetail(id){
     galleryHtml('Foto ('+photos.length+')', photos) +
     detailRow('Tanggal', fmtDate(p.tanggal)) +
     detailRow('Pendata', p.pendata) +
+    detailRow('No. HP', p.telepon) +
+    detailRow('Nama Perumahan', p.housingComplex) +
     detailRow('Kecamatan', titleCase(p.kecamatan)) +
     detailRow('Desa/Kelurahan', titleCase(p.desa)) +
     detailRow('Banjar/Lingkungan', p.banjar) +
     detailRow('Jumlah Hewan', p.animalCount) +
-    detailRow('Sudah Disteril', p.sterilSudah) +
-    detailRow('Butuh Sterilisasi', p.sterilButuh) +
-    detailRow('Dibiarkan Berkeliaran', p.berkeliaran) +
-    detailRow('Dipelihara di Rumah', p.diDalamRumah) +
-    detailRow('Ternak Lain', p.ternakLain ? titleCase(p.ternakLain) : null) +
+    detailRow('— Anjing', p.bySpecies.Anjing ? p.bySpecies.Anjing.total+' ekor ('+p.bySpecies.Anjing.jantan+' jantan, '+p.bySpecies.Anjing.betina+' betina)' : null) +
+    detailRow('— Kucing', p.bySpecies.Kucing ? p.bySpecies.Kucing.total+' ekor ('+p.bySpecies.Kucing.jantan+' jantan, '+p.bySpecies.Kucing.betina+' betina)' : null) +
+    detailRow('Sudah Disteril (Anjing+Kucing)', p.sterilSudah) +
+    detailRow('Butuh Sterilisasi (Anjing+Kucing)', p.sterilButuh) +
+    detailRow('Dibiarkan Berkeliaran (Anjing+Kucing)', p.berkeliaran) +
+    detailRow('Dipelihara di Rumah (Anjing+Kucing)', p.diDalamRumah) +
+    detailRow('Ternak Lain', p.ternakTypes.length ? p.ternakTypes.map(function(t){ return (TERNAK_LABELS[t]||titleCase(t))+' ('+(p.ternakCounts[t]||0)+' ekor)'; }).join(', ') : (p.tidakMemeliharaTernak ? 'Tidak memelihara ternak lain' : null)) +
+    detailRow('Status Validasi', p.validationStatus || 'Belum divalidasi') +
     detailRow('Lokasi GPS', (typeof p.lat==='number') ? p.lat.toFixed(5)+', '+p.lng.toFixed(5) : null) +
     '<div class="gallery-label" style="margin-top:10px;">Rincian Hewan</div>' +
     '<div style="font-size:12px;color:var(--ink);line-height:1.7;">'+animalsList+'</div>';
