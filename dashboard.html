@@ -426,11 +426,27 @@ function validationStatusLabel(v){
 const KoboClient = (function(){
   function authHeaders(){ return KOBO_CONFIG.apiToken ? { 'Authorization': 'Token ' + KOBO_CONFIG.apiToken } : {}; }
   async function fetchSubmissions(formConf){
-    const url = KOBO_CONFIG.serverUrl + '/api/v2/assets/' + formConf.assetUid + '/data/?format=json&_=' + Date.now();
-    const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
-    if(!res.ok) throw new Error('Kobo API merespons status ' + res.status);
-    const json = await res.json();
-    return json.results || [];
+    const pageSize = 1000;      // ambil per-1000 baris supaya request tetap ringan
+    const maxPages = 100;       // pengaman agar tidak infinite-loop jika API berperilaku aneh
+    let start = 0;
+    let all = [];
+    let total = null;
+    let page = 0;
+    while(page < maxPages){
+      const url = KOBO_CONFIG.serverUrl + '/api/v2/assets/' + formConf.assetUid + '/data/?format=json&limit=' + pageSize + '&start=' + start + '&_=' + Date.now();
+      const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
+      if(!res.ok) throw new Error('Kobo API merespons status ' + res.status);
+      const json = await res.json();
+      // Dukung baik respons ber-paginasi ({count,next,results}) maupun array polos.
+      const results = Array.isArray(json) ? json : (json.results || []);
+      all = all.concat(results);
+      total = (json && typeof json.count === 'number') ? json.count : all.length;
+      start += results.length;
+      page++;
+      // Berhenti kalau: sudah dapat semua (start>=total), atau halaman ini kosong (hindari infinite loop).
+      if(results.length === 0 || start >= total) break;
+    }
+    return all;
   }
   function attachmentUrl(record, fileValue){
     if(!record._attachments || !fileValue) return null;
@@ -452,6 +468,19 @@ let RAW_CASES = [];  // 1 baris = 1 submission (Lapor Gigitan)
 let charts = {};      // registry Chart.js instances
 let map = null;
 let mapLayers = { hewan: null, gigitan: null };
+
+// Jaring pengaman: kalau paginasi API pernah tumpang-tindih (mis. data baru masuk
+// tepat di antara 2 request halaman), pastikan tidak ada submission yang terhitung dobel.
+function dedupeSubmissions(list){
+  const seen = new Set();
+  return list.filter(function(r){
+    const key = r._uuid || r._id;
+    if(key === undefined || key === null) return true;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 /* ============================================================
    MAPPING: PENDATAAN HEWAN
@@ -1038,13 +1067,35 @@ function renderTable(tableId, rows, columns, rowAttrFn){
   table.innerHTML = html;
 }
 
+function speciesSummary(p, sp){
+  const s = p.bySpecies[sp];
+  if(!s || s.total <= 0) return '-';
+  const bits = [s.total+' ekor'];
+  const sexBits = [];
+  if(s.jantan) sexBits.push(s.jantan+'J');
+  if(s.betina) sexBits.push(s.betina+'B');
+  if(sexBits.length) bits.push('('+sexBits.join('/')+')');
+  const vaxBits = [];
+  if(s.vaxSudah) vaxBits.push(s.vaxSudah+' sudah vaksin');
+  if(s.vaxBelum) vaxBits.push(s.vaxBelum+' belum vaksin');
+  if(vaxBits.length) bits.push('— '+vaxBits.join(', '));
+  return bits.join(' ');
+}
+
 function renderHewanTable(pets){
+  // PENTING: 1 baris tabel = 1 submission (rumah tangga), BUKAN 1 baris per ekor.
+  // Data hewan di form ini berskema agregat (jumlah per jenis kelamin/vaksin), bukan
+  // catatan per-individu, jadi memecahnya jadi banyak baris hanya akan terlihat seperti
+  // baris yang berulang/duplikat (mis. 1 rumah dengan 52 ekor jadi 52 baris nyaris identik).
+  // Untuk submission yang memang punya rincian per-ekor (repeat group, dengan foto masing²),
+  // barisnya tetap dipecah karena itu representasi data asli, bukan duplikasi.
   const rows = [];
   pets.forEach(function(p){
-    if(p.animals.length === 0){
-      rows.push({ p:p, a:null });
-    } else {
+    const hasRepeatDetail = p.animals.length > 0 && p.animals[0].source === 'repeat';
+    if(hasRepeatDetail){
       p.animals.forEach(function(a){ rows.push({ p:p, a:a }); });
+    } else {
+      rows.push({ p:p, a:null });
     }
   });
   renderTable('table-hewan', rows, [
@@ -1057,7 +1108,9 @@ function renderHewanTable(pets){
     { label:'Kecamatan', get:function(r){ return titleCase(r.p.kecamatan); } },
     { label:'Desa/Kelurahan', get:function(r){ return titleCase(r.p.desa); } },
     { label:'Banjar/Lingkungan', get:function(r){ return r.p.banjar || '-'; } },
-    { label:'Jenis Hewan', get:function(r){ return r.a ? r.a.species : '-'; } },
+    { label:'Jenis Hewan', get:function(r){ return r.a ? r.a.species : (r.p.animalCount+' ekor'); } },
+    { label:'Anjing', get:function(r){ return r.a ? '-' : speciesSummary(r.p,'Anjing'); } },
+    { label:'Kucing', get:function(r){ return r.a ? '-' : speciesSummary(r.p,'Kucing'); } },
     { label:'Jenis Kelamin', get:function(r){ return r.a && r.a.sex ? r.a.sex : '-'; } },
     { label:'Status Vaksin', get:function(r){ return r.a && r.a.vaccineStatus ? r.a.vaccineStatus : '-'; } },
     { label:'Sudah Disteril (Anjing+Kucing)', get:function(r){ return r.p.sterilSudah; } },
@@ -1193,7 +1246,10 @@ function renderAll(){
 /* ============================================================
    SYNC
 ============================================================ */
+let isSyncing = false;
 async function syncData(){
+  if(isSyncing) return; // cegah sinkronisasi tumpang-tindih jika interval terpicu saat fetch sebelumnya belum selesai
+  isSyncing = true;
   const statusEl = document.getElementById('sync-status');
   const iconEl = document.getElementById('refresh-icon');
   iconEl.classList.add('spin');
@@ -1203,16 +1259,17 @@ async function syncData(){
       KoboClient.fetchSubmissions(KOBO_CONFIG.petForm),
       KoboClient.fetchSubmissions(KOBO_CONFIG.caseForm)
     ]);
-    RAW_PETS = rawPets.map(mapPetSubmission);
-    RAW_CASES = rawCases.map(mapCaseSubmission);
+    RAW_PETS = dedupeSubmissions(rawPets).map(mapPetSubmission);
+    RAW_CASES = dedupeSubmissions(rawCases).map(mapCaseSubmission);
     populateFilterOptions(RAW_PETS);
     renderAll();
-    statusEl.textContent = 'Tersinkron · ' + new Date().toLocaleTimeString('id-ID');
+    statusEl.textContent = 'Tersinkron · ' + RAW_PETS.length + ' rumah tangga, ' + RAW_CASES.length + ' laporan gigitan · ' + new Date().toLocaleTimeString('id-ID');
   }catch(err){
     console.error('Gagal memuat data dashboard', err);
     statusEl.textContent = 'Gagal memuat data. Coba muat ulang.';
   }finally{
     iconEl.classList.remove('spin');
+    isSyncing = false;
   }
 }
 
