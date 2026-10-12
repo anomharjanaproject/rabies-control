@@ -202,6 +202,35 @@ table.dt tbody tr.click{cursor:pointer;}
 .methods{font-size:11.5px;color:var(--ink2);line-height:1.65;}
 .methods h4{margin:10px 0 2px;font-size:12px;color:var(--navy);}
 .methods code{display:inline;white-space:normal;background:var(--line2);padding:1px 5px;border-radius:4px;font-size:11px;}
+/* Tooltip info */
+.tip{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:#E4ECEF;color:#4D6670;font:italic 700 10px/1 Georgia,serif;cursor:help;margin-left:6px;vertical-align:1px;text-transform:none;letter-spacing:0;flex:none;}
+.tip:hover,.tip:focus{background:var(--teal);color:#fff;outline:none;}
+th .tip{width:13px;height:13px;font-size:9px;margin-left:4px;}
+#tipbox{position:fixed;z-index:3000;max-width:320px;background:#0B2433;color:#DCE7EC;font-size:11.5px;line-height:1.55;padding:10px 12px;border-radius:9px;pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:500;text-transform:none;letter-spacing:0;}
+#tipbox b{color:#fff;font-size:12px;}
+#tipbox .tf{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.15);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;color:#F6C98C;}
+/* Simulasi */
+.disclaimer{font-size:11.5px;background:#FFF8EC;border:1px solid #F3DFB8;color:#6B4A12;border-radius:10px;padding:9px 13px;margin-bottom:12px;line-height:1.5;}
+.sim-params{display:flex;flex-direction:column;gap:11px;}
+.prm label{display:flex;align-items:center;font-size:11.5px;font-weight:600;color:var(--ink2);margin-bottom:3px;}
+.prm label output{margin-left:auto;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;}
+.prm input[type=range]{width:100%;accent-color:var(--teal);margin:0;}
+.prm-group{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);font-weight:800;border-top:1px solid var(--line2);padding-top:10px;margin-top:2px;}
+.prm-group:first-child{border-top:0;padding-top:0;margin-top:0;}
+.mini-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.mk{border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;}
+.mk .l{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;}
+.mk .v{font-size:19px;font-weight:800;color:var(--navy);margin-top:4px;font-variant-numeric:tabular-nums;line-height:1.15;}
+.mk .v.bad{color:var(--red);} .mk .v.good{color:#1E6B48;}
+.mk .s{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.35;}
+.budget-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;}
+.bi label{font-size:11px;font-weight:600;color:var(--ink2);display:flex;align-items:center;margin-bottom:3px;}
+.bi input,.bi select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:#fff;font-variant-numeric:tabular-nums;}
+.bi input:focus,.bi select:focus{outline:2px solid rgba(15,127,168,.25);border-color:var(--teal);}
+.bi.full{grid-column:1/-1;}
+.bi .hint{font-size:10px;color:var(--muted);margin-top:2px;}
+table.dt tr.total td{background:#F6F9FA;font-weight:800;color:var(--navy);border-top:2px solid var(--line);}
+table.dt td.wrap{white-space:normal;min-width:180px;}
 footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
 
 @media (max-width:1180px){
@@ -211,6 +240,7 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
   .map-layout{grid-template-columns:1fr;}
   .hotspot-list{max-height:none;display:grid;grid-template-columns:repeat(2,1fr);}
   .q-grid{grid-template-columns:repeat(3,1fr);}
+  .mini-kpis{grid-template-columns:repeat(2,1fr);}
 }
 @media (max-width:720px){
   .wrap{padding:14px 16px 40px;} .topbar-inner,.nav{padding-left:16px;padding-right:16px;}
@@ -220,8 +250,10 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
   .insights{grid-template-columns:1fr;}
   .hotspot-list{grid-template-columns:1fr;}
   .q-grid{grid-template-columns:1fr 1fr;}
+  .budget-inputs{grid-template-columns:1fr;}
   #map{height:420px;}
   .sync-status{max-width:100%;}
+  .map-controls label[style]{margin-left:0!important;flex-wrap:wrap;width:100%;} .map-controls select{max-width:100%;width:100%;}
   .dl{grid-template-columns:1fr;}
   .section-head p{margin-left:0;}
 }
@@ -247,6 +279,8 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
     <a href="#s-vaksin">Vaksinasi &amp; Risiko</a>
     <a href="#s-populasi">Populasi</a>
     <a href="#s-steril">Sterilisasi &amp; Pemeliharaan</a>
+    <a href="#s-simulasi">Simulasi Wabah</a>
+    <a href="#s-anggaran">Simulasi Anggaran</a>
     <a href="#s-ternak">Ternak</a>
     <a href="#s-aktivitas">Aktivitas Pendataan</a>
     <a href="#s-kualitas">Kualitas Data</a>
@@ -284,7 +318,7 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
         <label><input type="checkbox" id="ly-points" checked> Titik rumah tangga</label>
         <label><input type="checkbox" id="ly-heat"> Heatmap</label>
         <label><input type="checkbox" id="ly-grid" checked> Grid hotspot</label>
-        <label style="margin-left:auto;">Indikator:
+        <label style="margin-left:auto;">Indikator<i class="tip" tabindex="0" data-tip="map_metric">i</i>:
           <select id="map-metric">
             <option value="roamUnvax">Estimasi anjing berkeliaran belum vaksin</option>
             <option value="dogUnvax">Anjing belum vaksin</option>
@@ -346,6 +380,35 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
     </div>
   </section>
 
+  <!-- SIMULASI WABAH -->
+  <section class="section" id="s-simulasi">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>Simulasi Risiko Wabah Rabies<i class="tip" tabindex="0" data-tip="sim_model">i</i></h2><p>Proyeksi 12 bulan bila anjing rabies masuk ke wilayah terfilter. Cakupan vaksin dan proporsi anjing berkeliaran diambil otomatis dari data; parameter epidemiologi dapat digeser. Dua skenario dibandingkan: kondisi saat ini vs. kampanye vaksinasi.</p></div></div>
+    <div class="disclaimer"><b>Penting:</b> simulasi ini adalah model matematis sederhana untuk perencanaan dan edukasi, bukan prediksi pasti. Hasil sangat bergantung pada asumsi parameter dan hanya mencakup anjing di rumah tangga terdata (plus estimasi anjing tak berpemilik).</div>
+    <div class="grid">
+      <div class="card c4"><h3>Parameter Simulasi</h3><div class="note">Arahkan kursor/ketuk ikon <i class="tip" tabindex="0" data-tip="sim_params">i</i> untuk definisi tiap parameter.</div><div class="sim-params" id="sim-params"></div><button class="btn outline sm" id="sim-reset" style="margin-top:14px;align-self:flex-start">Kembalikan ke nilai awal</button></div>
+      <div class="card c8"><div class="mini-kpis" id="sim-kpis"></div>
+        <div class="card-head"><div><h3>Proyeksi Kasus Rabies pada Anjing<i class="tip" tabindex="0" data-tip="sim_chart">i</i></h3><div class="note" id="sim-note"></div></div><div class="seg" id="seg-sim"><button class="on" data-v="week">Mingguan</button><button data-v="cum">Kumulatif</button></div></div>
+        <div class="cw h320"><canvas id="ch-sim"></canvas></div>
+        <div class="legend"><span><i style="background:#C1453D"></i>Kondisi saat ini (tanpa kampanye)</span><span><i style="background:#0F7FA8"></i>Dengan kampanye vaksinasi</span><span style="color:var(--muted)">Garis putus-putus = mulai kampanye</span></div>
+      </div>
+      <div class="card c6"><h3>Angka Reproduksi Efektif (Rₑ) per Desa<i class="tip" tabindex="0" data-tip="re">i</i></h3><div class="note">Rₑ &gt; 1: satu anjing rabies diperkirakan menularkan ke lebih dari satu anjing lain sehingga wabah dapat berkembang. Kondisi saat ini, sebelum kampanye.</div><div class="cw h280"><canvas id="ch-re-desa"></canvas></div></div>
+      <div class="card c6"><h3>Banjar dengan Risiko Wabah Tertinggi<i class="tip" tabindex="0" data-tip="re_banjar">i</i></h3><div class="note">Diurutkan menurut peluang wabah besar. Hanya banjar dengan ≥5 anjing.</div><div class="tscroll" style="max-height:322px"><table class="dt" id="tb-re-banjar"></table></div></div>
+    </div>
+  </section>
+
+  <!-- SIMULASI ANGGARAN -->
+  <section class="section" id="s-anggaran">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>Simulasi Kebutuhan Anggaran Program Rabies<i class="tip" tabindex="0" data-tip="budget_model">i</i></h2><p>Estimasi biaya satu tahun program pengendalian rabies untuk wilayah terfilter. Volume kegiatan dihitung dari data lapangan dan hasil simulasi wabah; target cakupan mengikuti slider kampanye di atas. Biaya satuan adalah asumsi awal — ganti dengan harga setempat.</p></div></div>
+    <div class="grid">
+      <div class="card c5"><h3>Asumsi Program &amp; Biaya Satuan</h3><div class="note">Semua angka dalam Rupiah dan dapat diubah.</div><div class="budget-inputs" id="bud-inputs"></div><button class="btn outline sm" id="bud-reset" style="margin-top:14px;align-self:flex-start">Kembalikan ke nilai awal</button></div>
+      <div class="card c7"><div class="mini-kpis" id="bud-kpis"></div>
+        <h3>Komposisi Anggaran<i class="tip" tabindex="0" data-tip="budget_chart">i</i></h3><div class="note" id="bud-note">Biaya per komponen kegiatan.</div>
+        <div class="cw h280"><canvas id="ch-budget"></canvas></div>
+      </div>
+      <div class="card c12"><h3>Rincian Anggaran</h3><div class="note">Volume × biaya satuan. Kontingensi dihitung dari subtotal.</div><div class="tscroll"><table class="dt" id="tb-budget"></table></div></div>
+    </div>
+  </section>
+
   <!-- TERNAK -->
   <section class="section" id="s-ternak">
     <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10l8-6 8 6v10M9 20v-5h6v5"/></svg></span>Kepemilikan Ternak</h2><p>Informasi pendukung untuk perencanaan One Health (rabies juga dapat menular ke ternak).</p></div></div>
@@ -370,19 +433,19 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
   <section class="section" id="s-kualitas">
     <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>Kualitas Data</h2><p>Pemeriksaan otomatis untuk membantu verifikasi lapangan. Klik kartu untuk menampilkan catatan yang terkena aturan tersebut.</p></div></div>
     <div class="q-grid" id="q-grid"></div>
-    <div class="card"><div class="tbl-tools"><b style="font-size:12.5px;" id="q-title">Catatan yang perlu diverifikasi</b><span class="info" id="q-info"></span><button class="btn outline sm" id="q-export">Unduh CSV</button></div><div class="tscroll" style="max-height:380px;"><table class="dt" id="tb-quality"></table></div><div class="pager" id="q-pager"></div></div>
+    <div class="card"><div class="tbl-tools"><b style="font-size:12.5px;" id="q-title">Catatan yang perlu diverifikasi</b><span class="info" id="q-info"></span></div><div class="tscroll" style="max-height:380px;"><table class="dt" id="tb-quality"></table></div><div class="pager" id="q-pager"></div></div>
   </section>
 
   <!-- BANJAR -->
   <section class="section" id="s-banjar">
     <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18"/></svg></span>Rekap per Banjar / Lingkungan</h2><p>Nama banjar dinormalisasi (huruf besar/kecil, spasi, tanda baca, awalan "Br.", serta ejaan th/t, dh/d) agar variasi penulisan seperti "Jaba Pura"/"Jabapura" dan "Kertha"/"Kerta" digabung.</p></div></div>
-    <div class="card"><div class="tbl-tools"><input type="search" id="bj-search" placeholder="Cari banjar / desa…"><span class="info" id="bj-info"></span><button class="btn outline sm" id="bj-export">Unduh CSV</button></div><div class="tscroll"><table class="dt" id="tb-banjar"></table></div></div>
+    <div class="card"><div class="tbl-tools"><input type="search" id="bj-search" placeholder="Cari banjar / desa…"><span class="info" id="bj-info"></span></div><div class="tscroll"><table class="dt" id="tb-banjar"></table></div></div>
   </section>
 
   <!-- DATA -->
   <section class="section" id="s-data">
     <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg></span>Data Mentah</h2><p>Seluruh catatan sesuai filter. Klik baris untuk melihat detail.</p></div></div>
-    <div class="card"><div class="tbl-tools"><input type="search" id="raw-search" placeholder="Cari nama KK, banjar, pendata…"><span class="info" id="raw-info"></span><button class="btn outline sm" id="raw-export">Unduh CSV</button></div><div class="tscroll"><table class="dt" id="tb-raw"></table></div><div class="pager" id="raw-pager"></div></div>
+    <div class="card"><div class="tbl-tools"><input type="search" id="raw-search" placeholder="Cari nama KK, banjar, kode pendata…"><span class="info" id="raw-info"></span></div><div class="tscroll"><table class="dt" id="tb-raw"></table></div><div class="pager" id="raw-pager"></div></div>
   </section>
 
   <!-- METODOLOGI -->
@@ -394,6 +457,8 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
       <h4>Skor Prioritas banjar (0–100)</h4><code>100 × [0,5 × (1 − cakupan vaksin) + 0,3 × proporsi berkeliaran + 0,2 × proporsi butuh steril]</code>. Kategori: ≥ 50 tinggi, 35–49 sedang, &lt; 35 rendah. Bobot dapat disesuaikan pada konstanta <code>PRIORITY_WEIGHTS</code> di kode.
       <h4>Grid hotspot</h4>Titik GPS dikelompokkan ke sel berukuran 0,002° (± 220 m × 220 m) dan nilai indikator dijumlahkan per sel. Titik dengan presisi GPS &gt; 50 m tetap dipetakan namun ditandai di Kualitas Data.
       <h4>Aturan kualitas data</h4>GPS kosong; presisi &gt; 50 m; titik &gt; 4 km dari median lokasi desanya; jantan + betina ≠ total; sudah + belum vaksin ≠ total; berkeliaran + dalam rumah ≠ total; steril + butuh steril &gt; total; HPR dipilih tetapi jumlahnya 0/kosong; nama KK + banjar sama dan lokasinya ≤ 30 m (kemungkinan duplikat, catatan pertama tidak ditandai); durasi pengisian &lt; 1 atau &gt; 60 menit.
+      <h4>Simulasi wabah (model SEIV dua kelompok)</h4>Populasi anjing dibagi menjadi kelompok <b>berkeliaran</b> (anjing berpemilik yang dilepas + anjing tak berpemilik; bobot kontak 1) dan <b>di dalam rumah</b> (bobot kontak <i>w</i>). Tiap kelompok memiliki kompartemen Rentan (S), Terpapar/inkubasi (E, rata-rata 22 hari), Infeksius (I, rata-rata 3 hari lalu mati), dan Kebal vaksin (V). Pencampuran proporsional: laju infeksi kelompok <i>k</i> = <code>a_k × β × Σ(a_j·I_j) ÷ Σ(a_j·N_j)</code>, dengan β dikalibrasi agar angka reproduksi populasi tanpa kekebalan sama dengan R₀. Angka reproduksi efektif: <code>Rₑ = R₀ × Σ(a_k²·S_k) ÷ Σ(a_k²·N_k)</code> — anjing berkeliaran yang belum kebal berbobot paling besar. Ambang kekebalan kelompok: <code>(1 − 1/R₀) ÷ efektivitas</code>. Peluang wabah besar dari <i>n</i> kasus awal: <code>1 − (1/Rₑ)ⁿ</code> (pendekatan proses percabangan). Kelahiran mengganti kematian alami sesuai laju pergantian populasi, sehingga kekebalan menurun bila tidak ada vaksinasi ulang. Kampanye berlangsung 30 hari dan menaikkan proporsi kebal hingga target × efektivitas vaksin. Dampak pada manusia: paparan = kasus anjing × orang tergigit per anjing rabies; kematian = paparan × (1 − cakupan PEP) × risiko kematian tanpa PEP. Model deterministik — angka pecahan berarti nilai harapan.
+      <h4>Simulasi anggaran</h4>Volume vaksinasi = target cakupan × populasi (mode tahunan) atau selisih menuju target (mode kesenjangan), ditambah anjing tak berpemilik yang terjangkau. Hari-tim = jumlah hewan divaksin ÷ kapasitas tim per hari. Surveilans dan PEP memakai hasil simulasi skenario kampanye. Biaya respons yang dapat dihindari = selisih biaya surveilans + PEP antara skenario tanpa dan dengan kampanye.
       <h4>Sumber data</h4><span id="src-info">—</span>
     </div>
   </section>
@@ -500,11 +565,6 @@ function parseDate(v){
   const d=new Date(s); return isNaN(d)?null:d;
 }
 function haversine(a1,o1,a2,o2){ const R=6371000, t=Math.PI/180; const da=(a2-a1)*t, dn=(o2-o1)*t; const x=Math.sin(da/2)**2+Math.cos(a1*t)*Math.cos(a2*t)*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(x)); }
-function downloadCSV(name, header, rows){
-  const q=v=>{ const s=v==null?'':String(v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
-  const csv='﻿'+[header.map(q).join(',')].concat(rows.map(r=>r.map(q).join(','))).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
-}
 
 /* =========================================================================
    STATE
@@ -524,8 +584,16 @@ const SORT = { banjar:{k:'score',d:-1}, enum:{k:'kk',d:-1}, raw:{k:'date',d:-1},
 function cleanPendata(v){
   let t=String(v==null?'':v).replace(/\s+/g,' ').trim();
   if(!t) return '(tanpa nama)';
+  if(t.includes('*')) return t; // sudah disamarkan di server (Code.gs)
   const m=t.match(/^(\d[\d\s.-]{2,16}\d)(?!\d)/); if(m){ const id=m[1].replace(/\D/g,''); if(id.length>=3) return id; }
   return t.length>40 ? t.slice(0,38)+'…' : t;
+}
+// Samarkan identitas pendata: tampilkan sebagian karakter saja (mis. 2309511042 → 2309***042)
+function maskPendata(t){
+  t=String(t||'').trim();
+  if(!t || t==='(tanpa nama)' || t.includes('*')) return t||'(tanpa nama)';
+  if(/^\d+$/.test(t)){ if(t.length>=7) return t.slice(0,4)+'***'+t.slice(-3); if(t.length>=4) return t.slice(0,2)+'***'+t.slice(-1); return t[0]+'**'; }
+  const c=t.replace(/\s+/g,' '); return c.length<=3 ? c[0]+'**' : c.slice(0,3)+'***'+c.slice(-1);
 }
 function makeGetter(r){ // r = objek dengan kunci ternormalisasi
   return function(){ for(const n of arguments){ const v=r[normKey(n)]; if(v!==undefined && v!==null && v!=='') return v; } return null; };
@@ -587,7 +655,7 @@ function normalizeRows(objs){
     else if(c.t>0) hh='cat';
     out.push({
       i, id:get('_id')||get('_index')||(i+1), date, start, dur, hour:start?start.getHours():null,
-      pendata:cleanPendata(get('Nama_Pendata')), kk:String(get('Nama_Penduduk_kepala_keluarga','Nama_Pemilik_Hewan')||'').trim(),
+      pendata:maskPendata(cleanPendata(get('Nama_Pendata'))), kk:String(get('Nama_Penduduk_kepala_keluarga','Nama_Pemilik_Hewan')||'').trim(),
       perum:String(get('Nama_Perumahan_jika_ada')||'').trim(),
       lat, lng, prec, kec, kecLabel:titleCase(kecRaw)||'Tidak diketahui', desa:kec+'|'+desa, desaLabel:titleCase(desaRaw)||'Tidak diketahui',
       banjarRaw:banjarClean, banjarId:kec+'|'+desa+'|'+banjarKey, banjarLabel:'',
@@ -767,7 +835,7 @@ function hbar(id, labels, datasets, opts={}){
 function kpiCard(o){
   return '<div class="kpi" style="--accent:'+(o.color||COL.good)+'">'+
     (o.badge?'<span class="badge '+o.badge[0]+'">'+o.badge[1]+'</span>':'')+
-    '<div class="lbl"><i></i>'+o.label+'</div><div class="num">'+o.value+'</div>'+
+    '<div class="lbl"><i></i>'+o.label+(o.tip?tip(o.tip):'')+'</div><div class="num">'+o.value+'</div>'+
     (o.meter!=null?'<div class="meter"><div class="fill" style="width:'+Math.min(100,o.meter)+'%"></div>'+(o.target?'<div class="target" style="left:'+o.target+'%"></div>':'')+'</div>':'')+
     '<div class="sub">'+(o.sub||'&nbsp;')+'</div></div>';
 }
@@ -777,14 +845,14 @@ function renderKPIs(A){
   const desaN=new Set(VIEW.map(p=>p.desa)).size, banjarN=new Set(VIEW.map(p=>p.banjarId)).size;
   const days=new Set(VIEW.filter(p=>p.date).map(p=>dkey(p.date))).size;
   $('kpis').innerHTML=[
-    kpiCard({label:'Rumah Tangga Terdata',value:nf.format(A.kk),sub:'<b>'+desaN+'</b> desa · <b>'+banjarN+'</b> banjar · <b>'+days+'</b> hari kerja',color:COL.navy}),
-    kpiCard({label:'Total HPR Tercatat',value:nf.format(A.d.t+A.c.t),sub:'<b>'+nf.format(A.d.t)+'</b> anjing · <b>'+nf.format(A.c.t)+'</b> kucing',color:COL.navy}),
-    kpiCard({label:'Cakupan Vaksin Anjing',value:fmt(A.dogCov,1)+'<small>%</small>',meter:A.dogCov,target:T,badge:covBadge(A.dogCov),sub:'<b>'+nf.format(A.d.v)+'</b> sudah · <b>'+nf.format(A.d.u)+'</b> belum · target '+T+'%',color:COL.good}),
-    kpiCard({label:'Cakupan Vaksin Kucing',value:fmt(A.catCov,1)+'<small>%</small>',meter:A.catCov,target:T,badge:covBadge(A.catCov),sub:'<b>'+nf.format(A.c.v)+'</b> sudah · <b>'+nf.format(A.c.u)+'</b> belum',color:COL.cat}),
-    kpiCard({label:'Rata-rata Anjing / KK',value:A.dogHH?fmt(A.d.t/A.dogHH,2):'–',sub:'di antara <b>'+nf.format(A.dogHH)+'</b> KK pemilik anjing ('+fmtPct(pct(A.dogHH,A.kk),0)+' dari KK)',color:COL.dog}),
-    kpiCard({label:'Anjing Sudah Steril',value:fmt(A.dogSter,1)+'<small>%</small>',meter:A.dogSter,sub:'<b>'+nf.format(A.d.s)+'</b> steril · <b>'+nf.format(A.d.n)+'</b> masih butuh steril',color:COL.green}),
-    kpiCard({label:'Anjing Berkeliaran',value:fmt(A.dogRoam,1)+'<small>%</small>',meter:A.dogRoam,sub:'<b>'+nf.format(A.d.r)+'</b> ekor dilepas · <b>'+nf.format(A.d.h)+'</b> di dalam rumah',color:COL.need}),
-    kpiCard({label:'Est. Liar & Belum Vaksin',value:nf.format(Math.round(A.roamUnvax)),sub:'anjing berisiko tinggi menularkan rabies ('+fmtPct(pct(A.roamUnvax,A.d.t),1)+' populasi)',color:COL.red})
+    kpiCard({tip:'kpi_kk',label:'Rumah Tangga Terdata',value:nf.format(A.kk),sub:'<b>'+desaN+'</b> desa · <b>'+banjarN+'</b> banjar · <b>'+days+'</b> hari kerja',color:COL.navy}),
+    kpiCard({tip:'kpi_hpr',label:'Total HPR Tercatat',value:nf.format(A.d.t+A.c.t),sub:'<b>'+nf.format(A.d.t)+'</b> anjing · <b>'+nf.format(A.c.t)+'</b> kucing',color:COL.navy}),
+    kpiCard({tip:'kpi_dogcov',label:'Cakupan Vaksin Anjing',value:fmt(A.dogCov,1)+'<small>%</small>',meter:A.dogCov,target:T,badge:covBadge(A.dogCov),sub:'<b>'+nf.format(A.d.v)+'</b> sudah · <b>'+nf.format(A.d.u)+'</b> belum · target '+T+'%',color:COL.good}),
+    kpiCard({tip:'kpi_catcov',label:'Cakupan Vaksin Kucing',value:fmt(A.catCov,1)+'<small>%</small>',meter:A.catCov,target:T,badge:covBadge(A.catCov),sub:'<b>'+nf.format(A.c.v)+'</b> sudah · <b>'+nf.format(A.c.u)+'</b> belum',color:COL.cat}),
+    kpiCard({tip:'kpi_dpk',label:'Rata-rata Anjing / KK',value:A.dogHH?fmt(A.d.t/A.dogHH,2):'–',sub:'di antara <b>'+nf.format(A.dogHH)+'</b> KK pemilik anjing ('+fmtPct(pct(A.dogHH,A.kk),0)+' dari KK)',color:COL.dog}),
+    kpiCard({tip:'kpi_ster',label:'Anjing Sudah Steril',value:fmt(A.dogSter,1)+'<small>%</small>',meter:A.dogSter,sub:'<b>'+nf.format(A.d.s)+'</b> steril · <b>'+nf.format(A.d.n)+'</b> masih butuh steril',color:COL.green}),
+    kpiCard({tip:'kpi_roam',label:'Anjing Berkeliaran',value:fmt(A.dogRoam,1)+'<small>%</small>',meter:A.dogRoam,sub:'<b>'+nf.format(A.d.r)+'</b> ekor dilepas · <b>'+nf.format(A.d.h)+'</b> di dalam rumah',color:COL.need}),
+    kpiCard({tip:'kpi_ru',label:'Est. Liar & Belum Vaksin',value:nf.format(Math.round(A.roamUnvax)),sub:'anjing berisiko tinggi menularkan rabies ('+fmtPct(pct(A.roamUnvax,A.d.t),1)+' populasi)',color:COL.red})
   ].join('');
 }
 
@@ -841,11 +909,8 @@ let MAP=null, LY={points:null,heat:null,grid:null,legend:null}, GRID_CELLS=[];
 const CELL=0.002;
 function initMap(){
   MAP=L.map('map',{preferCanvas:true,zoomControl:true}).setView([-8.8,115.17],12);
-  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
-  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'});
-  const light=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap © CARTO'});
-  light.addTo(MAP);
-  L.control.layers({'Peta terang':light,'OpenStreetMap':osm,'Satelit':sat},null,{position:'topright'}).addTo(MAP);
+  // Peta dasar: OpenStreetMap standar (tanpa API key / layanan berbayar)
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(MAP);
   L.control.scale({imperial:false}).addTo(MAP);
   LY.legend=L.control({position:'bottomleft'}); LY.legend.onAdd=()=>{ const d=L.DomUtil.create('div','map-legend-box'); d.id='map-legend'; return d; }; LY.legend.addTo(MAP);
 }
@@ -973,7 +1038,7 @@ function renderRisk(){
   const P=banjarAggs().filter(x=>x.a.d.t>=5 && x.a.score!=null);
   const s=SORT.prio, val=x=>({score:x.a.score,cov:x.a.dogCov,roam:x.a.dogRoam,dogs:x.a.d.t,name:x.l})[s.k];
   P.sort((a,b)=>{const va=val(a),vb=val(b); return (typeof va==='string'?va.localeCompare(vb):(va-vb))*s.d;});
-  const th=(k,l,n)=>'<th data-sort="prio:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  const th=(k,l,n)=>'<th data-sort="prio:'+k+'" class="'+(n?'num':'')+'">'+l+colTip(k)+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
   $('tb-priority').innerHTML='<thead><tr><th>#</th>'+th('name','Banjar')+th('dogs','Anjing',1)+th('cov','Vaksin',1)+th('roam','Liar',1)+th('score','Skor',1)+'</tr></thead><tbody>'+
     (P.length?P.map((x,i)=>'<tr class="click" data-banjar="'+esc(x.k)+'" data-desa="'+esc(x.desa)+'"><td>'+(i+1)+'</td><td><b>'+esc(x.l)+'</b><div style="font-size:10.5px;color:var(--muted)">'+esc(x.dl)+'</div></td><td class="num">'+nf.format(x.a.d.t)+'</td><td class="num">'+fmtPct(x.a.dogCov,0)+'</td><td class="num">'+fmtPct(x.a.dogRoam,0)+'</td><td class="num"><span class="pill '+prioClass(x.a.score)+'">'+fmt(x.a.score,0)+'</span></td></tr>').join(''):'<tr><td colspan="6" class="empty">Tidak ada data</td></tr>')+'</tbody>';
 }
@@ -1054,7 +1119,7 @@ function renderTernak(){
   if(R.length) hbar('ch-ternak',R.map(r=>titleCase(r.t)),[{data:R.map(r=>r.kk),backgroundColor:COL.green,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700'},formatter:v=>nf.format(v)+' KK ('+fmt(pct(v,VIEW.length),1)+'%)'}}],
     {tooltip:{callbacks:{label:c=>' '+nf.format(c.raw)+' rumah tangga'}},extra:{layout:{padding:{right:90}}}});
   else emptyChart('ch-ternak','Tidak ada rumah tangga yang memelihara ternak.');
-  $('tb-ternak').innerHTML='<thead><tr><th>Jenis</th><th class="num">KK pemilik</th><th class="num">% dari KK</th><th class="num">Total ekor</th><th class="num">Median / KK</th><th class="num">Maks</th></tr></thead><tbody>'+
+  $('tb-ternak').innerHTML='<thead><tr><th>Jenis</th><th class="num">KK pemilik</th><th class="num">% dari KK</th><th class="num">Total ekor</th><th class="num">Median / KK'+tip('ternak_tbl')+'</th><th class="num">Maks</th></tr></thead><tbody>'+
     rows.map(r=>'<tr><td><b>'+titleCase(r.t)+'</b></td><td class="num">'+nf.format(r.kk)+'</td><td class="num">'+fmtPct(pct(r.kk,VIEW.length))+'</td><td class="num">'+nf.format(r.total)+'</td><td class="num">'+(r.med==null?'–':fmt(r.med,r.med%1?1:0))+'</td><td class="num">'+(r.max==null?'–':nf.format(r.max))+'</td></tr>').join('')+
     '<tr style="background:#F6F9FA"><td><b>Memelihara ternak (jenis apa pun)</b></td><td class="num"><b>'+nf.format(any)+'</b></td><td class="num"><b>'+fmtPct(pct(any,VIEW.length))+'</b></td><td colspan="3"></td></tr></tbody>';
 }
@@ -1098,7 +1163,7 @@ function renderAktivitas(){
     {tooltip:{callbacks:{label:c=>{const e=top[c.dataIndex];return [' '+e.kk+' KK dalam '+e.days+' hari',' '+e.dogs+' anjing · '+e.cats+' kucing',' Desa: '+e.desa];}}},extra:{layout:{padding:{right:30}},onClick:(e,els)=>{ if(els.length) setFilter('pendata', top[els[0].index].k); }}});
   else emptyChart('ch-enum');
   const s=SORT.enum; E.sort((a,b)=>{const va=a[s.k],vb=b[s.k]; if(typeof va==='string') return va.localeCompare(vb)*s.d; return ((va==null?-1:va)-(vb==null?-1:vb))*s.d;});
-  const th=(k,l,n)=>'<th data-sort="enum:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  const th=(k,l,n)=>'<th data-sort="enum:'+k+'" class="'+(n?'num':'')+'">'+l+colTip(k)+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
   $('tb-enum').innerHTML='<thead><tr>'+th('k','Pendata')+th('kk','KK',1)+th('days','Hari',1)+th('perDay','KK/hari',1)+th('dur','Median durasi',1)+th('gpsOk','GPS baik',1)+th('flag','Bertanda QC',1)+th('dogs','Anjing',1)+th('desa','Desa')+'</tr></thead><tbody>'+
     E.map(e=>'<tr class="click" data-pendata="'+esc(e.k)+'"><td><b>'+esc(e.k)+'</b></td><td class="num">'+e.kk+'</td><td class="num">'+e.days+'</td><td class="num">'+fmt(e.perDay,1)+'</td><td class="num">'+(e.dur==null?'–':fmt(e.dur,1)+' mnt')+'</td><td class="num">'+fmtPct(e.gpsOk,0)+'</td><td class="num">'+(e.flag>30?'<span class="pill p-md">'+fmtPct(e.flag,0)+'</span>':fmtPct(e.flag,0))+'</td><td class="num">'+nf.format(e.dogs)+'</td><td style="color:var(--muted);font-size:11px;white-space:normal;min-width:150px;max-width:240px">'+esc(e.desa)+'</td></tr>').join('')+'</tbody>';
 }
@@ -1109,8 +1174,8 @@ function renderAktivitas(){
 function renderQuality(){
   const n=VIEW.length; const clean=VIEW.filter(p=>!p.flags.length).length;
   const cards=[['','Semua catatan bertanda',n-clean]].concat(Object.keys(QRULES).map(k=>[k,QRULES[k],VIEW.filter(p=>p.flags.includes(k)).length]));
-  $('q-grid').innerHTML='<div class="q" style="cursor:default;background:#F4FAF6;border-color:#CDE9D9"><div class="n" style="color:#1E6B48">'+fmtPct(pct(clean,n),1)+'</div><div class="l">Skor kualitas</div><div class="p">'+nf.format(clean)+' dari '+nf.format(n)+' catatan bersih</div></div>'+
-    cards.map(([k,l,c])=>'<div class="q'+(qRule===k?' on':'')+'" data-q="'+k+'"><div class="n">'+nf.format(c)+'</div><div class="l">'+l+'</div><div class="p">'+fmtPct(pct(c,n),1)+'</div></div>').join('');
+  $('q-grid').innerHTML='<div class="q" style="cursor:default;background:#F4FAF6;border-color:#CDE9D9"><div class="n" style="color:#1E6B48">'+fmtPct(pct(clean,n),1)+'</div><div class="l">Skor kualitas'+tip('q.score')+'</div><div class="p">'+nf.format(clean)+' dari '+nf.format(n)+' catatan bersih</div></div>'+
+    cards.map(([k,l,c])=>'<div class="q'+(qRule===k?' on':'')+'" data-q="'+k+'"><div class="n">'+nf.format(c)+'</div><div class="l">'+l+(k?tip('q.'+k):'')+'</div><div class="p">'+fmtPct(pct(c,n),1)+'</div></div>').join('');
   const rows=VIEW.filter(p=>qRule?p.flags.includes(qRule):p.flags.length);
   $('q-title').textContent=qRule?('Catatan: '+QRULES[qRule]):'Semua catatan yang perlu diverifikasi';
   $('q-info').textContent=nf.format(rows.length)+' catatan';
@@ -1119,8 +1184,7 @@ function renderQuality(){
   $('tb-quality').innerHTML='<thead><tr><th>ID</th><th>Tanggal</th><th>Pendata</th><th>Kepala Keluarga</th><th>Banjar</th><th>Desa</th><th class="num">Anjing</th><th class="num">Kucing</th><th>Masalah</th></tr></thead><tbody>'+
     (slice.length?slice.map(p=>'<tr class="click" data-i="'+p.i+'"><td>'+esc(p.id)+'</td><td>'+fmtDate(p.date)+'</td><td>'+esc(p.pendata)+'</td><td>'+esc(p.kk)+'</td><td>'+esc(p.banjarLabel)+'</td><td>'+esc(p.desaLabel)+'</td><td class="num">'+p.d.t+'</td><td class="num">'+p.c.t+'</td><td style="white-space:normal">'+p.flags.map(f=>'<span class="flag">'+QRULES[f]+'</span>').join('')+'</td></tr>').join(''):'<tr><td colspan="9" class="empty">Tidak ada catatan bermasalah 🎉</td></tr>')+'</tbody>';
   pager('q-pager',qPage,pages,v=>{qPage=v;renderQuality();});
-  $('q-export').onclick=()=>downloadCSV('racon_qc_'+(qRule||'semua')+'.csv',['ID','Tanggal','Pendata','Kepala Keluarga','Banjar','Desa','Kecamatan','Lat','Lng','Presisi GPS','Anjing','Kucing','Masalah'],
-    rows.map(p=>[p.id,dkey(p.date),p.pendata,p.kk,p.banjarLabel,p.desaLabel,p.kecLabel,p.lat,p.lng,p.prec,p.d.t,p.c.t,p.flags.map(f=>QRULES[f]).join('; ')]));
+
 }
 function pager(id,page,pages,go){
   const el=$(id); if(pages<=1){el.innerHTML='';return;}
@@ -1136,13 +1200,12 @@ function renderBanjar(){
   let B=banjarAggs().map(x=>({k:x.k,desa:x.desa,name:x.l,dl:x.dl,kec:x.kec,kk:x.a.kk,dogs:x.a.d.t,cats:x.a.c.t,dpk:x.a.dogHH?x.a.d.t/x.a.dogHH:null,cov:x.a.dogCov,ccov:x.a.catCov,ster:x.a.dogSter,roam:x.a.dogRoam,need:x.a.d.n,ru:x.a.roamUnvax,score:x.a.d.t>=5?x.a.score:null,a:x.a}));
   if(q) B=B.filter(x=>normKey(x.name+x.dl+x.kec).includes(q));
   const s=SORT.banjar; B.sort((a,b)=>{const va=a[s.k],vb=b[s.k]; if(typeof va==='string') return va.localeCompare(vb)*s.d; return ((va==null?-1:va)-(vb==null?-1:vb))*s.d;});
-  const th=(k,l,n)=>'<th data-sort="banjar:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  const th=(k,l,n)=>'<th data-sort="banjar:'+k+'" class="'+(n?'num':'')+'">'+l+colTip(k)+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
   const bar=(v,c,tg)=>v==null?'–':'<div class="barcell">'+fmt(v,0)+'%<div class="b"><span style="width:'+Math.min(100,v)+'%;background:'+c+'"></span>'+(tg?'<i class="tg"></i>':'')+'</div></div>';
   $('tb-banjar').innerHTML='<thead><tr>'+th('name','Banjar')+th('dl','Desa')+th('kk','KK',1)+th('dogs','Anjing',1)+th('cats','Kucing',1)+th('dpk','Anjing/KK',1)+th('cov','Vaksin anjing',1)+th('ccov','Vaksin kucing',1)+th('ster','Steril',1)+th('roam','Berkeliaran',1)+th('ru','Est. liar blm vaksin',1)+th('score','Prioritas',1)+'</tr></thead><tbody>'+
     B.map(x=>'<tr class="click" data-banjar="'+esc(x.k)+'" data-desa="'+esc(x.desa)+'"><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.dl)+'</td><td class="num">'+nf.format(x.kk)+'</td><td class="num">'+nf.format(x.dogs)+'</td><td class="num">'+nf.format(x.cats)+'</td><td class="num">'+fmt(x.dpk,1)+'</td><td class="num">'+bar(x.cov,x.cov>=CONFIG.VACC_TARGET?COL.good:COL.need,1)+'</td><td class="num">'+bar(x.ccov,COL.cat)+'</td><td class="num">'+bar(x.ster,COL.green)+'</td><td class="num">'+bar(x.roam,COL.need)+'</td><td class="num">'+fmt(x.ru,1)+'</td><td class="num">'+(x.score==null?'<span style="color:var(--muted)">n&lt;5</span>':'<span class="pill '+prioClass(x.score)+'">'+fmt(x.score,0)+' · '+prioLabel(x.score)+'</span>')+'</td></tr>').join('')+'</tbody>';
   $('bj-info').textContent=nf.format(B.length)+' banjar';
-  $('bj-export').onclick=()=>downloadCSV('racon_rekap_banjar.csv',['Banjar','Desa','Kecamatan','KK','Anjing','Kucing','Anjing per KK pemilik','Anjing sudah vaksin','Anjing belum vaksin','Cakupan vaksin anjing %','Cakupan vaksin kucing %','Anjing steril %','Anjing butuh steril','Anjing berkeliaran %','Est. liar belum vaksin','Skor prioritas'],
-    B.map(x=>[x.name,x.dl,x.kec,x.kk,x.dogs,x.cats,x.dpk==null?'':x.dpk.toFixed(2),x.a.d.v,x.a.d.u,x.cov==null?'':x.cov.toFixed(1),x.ccov==null?'':x.ccov.toFixed(1),x.ster==null?'':x.ster.toFixed(1),x.need,x.roam==null?'':x.roam.toFixed(1),x.ru.toFixed(1),x.score==null?'':x.score.toFixed(0)]));
+
 }
 
 /* =========================================================================
@@ -1154,14 +1217,12 @@ function renderRaw(){
   const s=SORT.raw; const g={date:p=>p.date?p.date.getTime():0,id:p=>+p.id||0,kk:p=>p.kk,banjar:p=>p.banjarLabel,desa:p=>p.desaLabel,pendata:p=>p.pendata,dogs:p=>p.d.t,cats:p=>p.c.t,vax:p=>p.d.v,roam:p=>p.d.r,ster:p=>p.d.s}[s.k];
   R.sort((a,b)=>{const va=g(a),vb=g(b); return (typeof va==='string'?va.localeCompare(vb):va-vb)*s.d;});
   const per=30, pages=Math.max(1,Math.ceil(R.length/per)); rawPage=Math.min(rawPage,pages-1);
-  const th=(k,l,n)=>'<th data-sort="raw:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
-  $('tb-raw').innerHTML='<thead><tr>'+th('id','ID')+th('date','Tanggal')+th('kk','Kepala Keluarga')+th('banjar','Banjar')+th('desa','Desa')+th('pendata','Pendata')+th('dogs','Anjing',1)+th('vax','Vaksin',1)+th('roam','Liar',1)+th('ster','Steril',1)+th('cats','Kucing',1)+'<th>Ternak</th><th>Status</th></tr></thead><tbody>'+
+  const th=(k,l,n)=>'<th data-sort="raw:'+k+'" class="'+(n?'num':'')+'">'+l+colTip(k)+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  $('tb-raw').innerHTML='<thead><tr>'+th('id','ID')+th('date','Tanggal')+th('kk','Kepala Keluarga')+th('banjar','Banjar')+th('desa','Desa')+th('pendata','Pendata')+th('dogs','Anjing',1)+th('vax','Vaksin',1)+th('roam','Liar',1)+th('ster','Steril',1)+th('cats','Kucing',1)+'<th>Ternak</th><th>Status'+colTip('status')+'</th></tr></thead><tbody>'+
     R.slice(rawPage*per,(rawPage+1)*per).map(p=>'<tr class="click" data-i="'+p.i+'"><td>'+esc(p.id)+'</td><td>'+fmtDate(p.date)+'</td><td><b>'+esc(p.kk)+'</b></td><td>'+esc(p.banjarLabel)+'</td><td>'+esc(p.desaLabel)+'</td><td>'+esc(p.pendata)+'</td><td class="num">'+p.d.t+'</td><td class="num">'+p.d.v+'</td><td class="num">'+p.d.r+'</td><td class="num">'+p.d.s+'</td><td class="num">'+p.c.t+'</td><td>'+(Object.keys(p.ternak).map(titleCase).join(', ')||'–')+'</td><td><span class="legend" style="margin:0"><span><i class="dot" style="background:'+HH_STATUS[p.hh].color+'"></i>'+(p.flags.length?'<span class="flag">'+p.flags.length+' QC</span>':'')+'</span></span></td></tr>').join('')+'</tbody>';
   $('raw-info').textContent=nf.format(R.length)+' catatan';
   pager('raw-pager',rawPage,pages,v=>{rawPage=v;renderRaw();});
-  $('raw-export').onclick=()=>downloadCSV('racon_data_terfilter.csv',
-    ['ID','Tanggal','Pendata','Kepala Keluarga','Perumahan','Kecamatan','Desa','Banjar','Lat','Lng','Presisi GPS','Anjing','Anjing jantan','Anjing betina','Anjing sudah vaksin','Anjing belum vaksin','Anjing steril','Anjing butuh steril','Anjing berkeliaran','Anjing di rumah','Kucing','Kucing jantan','Kucing betina','Kucing sudah vaksin','Kucing belum vaksin','Kucing steril','Kucing butuh steril','Kucing berkeliaran','Kucing di rumah',...TERNAK.map(t=>'Jumlah '+t),'Status KK','Catatan QC'],
-    R.map(p=>[p.id,dkey(p.date),p.pendata,p.kk,p.perum,p.kecLabel,p.desaLabel,p.banjarLabel,p.lat,p.lng,p.prec,p.d.t,p.d.m,p.d.f,p.d.v,p.d.u,p.d.s,p.d.n,p.d.r,p.d.h,p.c.t,p.c.m,p.c.f,p.c.v,p.c.u,p.c.s,p.c.n,p.c.r,p.c.h,...TERNAK.map(t=>p.ternak[t]==null?'':p.ternak[t]),HH_STATUS[p.hh].label,p.flags.map(f=>QRULES[f]).join('; ')]));
+
 }
 
 /* =========================================================================
@@ -1183,6 +1244,363 @@ function openDetail(i){
 function closeModal(){ $('modal').classList.remove('show'); }
 
 /* =========================================================================
+   DEFINISI OPERASIONAL (tooltip ⓘ)
+   ========================================================================= */
+const DEF = {
+  // KPI
+  kpi_kk:{t:'Rumah Tangga Terdata',d:'Jumlah formulir pendataan yang masuk sesuai filter. Satu formulir = satu rumah tangga (KK) yang dikunjungi.',f:'n = jumlah baris data'},
+  kpi_hpr:{t:'Total HPR Tercatat',d:'Hewan Penular Rabies (anjing + kucing) yang dipelihara rumah tangga terdata. Belum termasuk hewan tak berpemilik.',f:'Σ total anjing + Σ total kucing'},
+  kpi_dogcov:{t:'Cakupan Vaksin Anjing',d:'Persentase anjing yang sudah divaksin rabies tahun ini. Penyebut adalah anjing yang status vaksinnya dijawab. Target minimal 70% (WHO) untuk memutus penularan.',f:'Σ sudah vaksin ÷ (Σ sudah + Σ belum) × 100%'},
+  kpi_catcov:{t:'Cakupan Vaksin Kucing',d:'Persentase kucing yang sudah divaksin rabies tahun ini.',f:'Σ kucing sudah vaksin ÷ (Σ sudah + Σ belum) × 100%'},
+  kpi_dpk:{t:'Rata-rata Anjing per KK Pemilik',d:'Rata-rata jumlah anjing pada rumah tangga yang memelihara minimal satu anjing. Menggambarkan kepadatan kepemilikan.',f:'Σ anjing ÷ jumlah KK dengan ≥1 anjing'},
+  kpi_ster:{t:'Anjing Sudah Steril',d:'Persentase anjing yang sudah disterilisasi (kebiri/steril) dari seluruh anjing tercatat.',f:'Σ sudah steril ÷ Σ total anjing × 100%'},
+  kpi_roam:{t:'Anjing Berkeliaran',d:'Persentase anjing yang dibiarkan bebas keluar rumah/berkeliaran. Anjing berkeliaran memiliki peluang kontak — dan menularkan rabies — lebih tinggi.',f:'Σ berkeliaran ÷ (Σ berkeliaran + Σ di dalam rumah) × 100%'},
+  kpi_ru:{t:'Estimasi Anjing Berkeliaran & Belum Vaksin',d:'Perkiraan jumlah anjing yang sekaligus berkeliaran dan belum divaksin — kelompok paling berisiko. Form tidak menanyakan kombinasi ini langsung, sehingga diestimasi per rumah tangga dengan asumsi kedua status saling bebas.',f:'Σ per KK: min(berkeliaran, belum vaksin, berkeliaran × belum vaksin ÷ total)'},
+  // Bagian & grafik
+  map:{t:'Peta Sebaran',d:'Titik = lokasi GPS rumah tangga, diwarnai menurut status vaksinasi anjingnya; ukuran titik sebanding jumlah HPR. Grid hotspot menjumlahkan indikator terpilih per sel ±220 × 220 m. Titik > 4 km dari median desanya disembunyikan karena kemungkinan salah lokasi.'},
+  map_metric:{t:'Indikator Peta',d:'Nilai yang dijumlahkan untuk heatmap dan grid hotspot. Default: estimasi anjing berkeliaran belum vaksin, indikator gabungan peluang kontak dan kerentanan.'},
+  hotspot:{t:'Sel Hotspot',d:'Sel grid (0,002° ≈ 220 m) dengan nilai indikator terbesar. Nama banjar/desa adalah yang paling banyak muncul di sel tersebut.'},
+  cov_desa:{t:'Cakupan Vaksin Anjing per Desa',d:'Cakupan vaksin anjing tiap desa. Oranye = di bawah target, biru = memenuhi target. Garis merah = target 70%.',f:'Σ sudah vaksin ÷ (Σ sudah + Σ belum) per desa'},
+  vax_desa:{t:'Status Vaksinasi Anjing per Desa',d:'Jumlah absolut anjing sudah dan belum divaksin per desa — menunjukkan besarnya beban kerja vaksinasi.'},
+  risk:{t:'Matriks Risiko per Banjar',d:'Setiap gelembung = satu banjar. Makin ke kiri (cakupan rendah) dan ke atas (banyak anjing berkeliaran), makin tinggi risikonya. Ukuran gelembung = jumlah anjing. Garis vertikal = target 70%, garis horizontal = rata-rata % berkeliaran wilayah terfilter.'},
+  prio:{t:'Skor Prioritas Banjar (0–100)',d:'Skor gabungan untuk mengurutkan banjar sasaran intervensi. ≥50 tinggi, 35–49 sedang, <35 rendah. Hanya banjar dengan ≥5 anjing.',f:'100 × [0,5×(1−cakupan) + 0,3×%berkeliaran + 0,2×%butuh steril]'},
+  cat_vax:{t:'Status Vaksinasi Kucing per Desa',d:'Proporsi kucing sudah dan belum divaksin di tiap desa.'},
+  gap:{t:'Kesenjangan Menuju Target',d:'Jumlah anjing tambahan yang perlu divaksin agar cakupan desa mencapai 70%.',f:'⌈0,7 × (sudah + belum) − sudah⌉'},
+  hh_vax:{t:'Profil Vaksinasi Rumah Tangga',d:'Rumah tangga pemilik anjing dikelompokkan: semua anjing sudah vaksin, sebagian, atau belum sama sekali.'},
+  pop_desa:{t:'Populasi per Desa',d:'Jumlah anjing dan kucing tercatat per desa (hanya hewan berpemilik di rumah tangga terdata).'},
+  own:{t:'Komposisi Kepemilikan HPR',d:'Rumah tangga menurut jenis HPR yang dipelihara: anjing saja, kucing saja, keduanya, atau tidak ada (jumlah 0).'},
+  hist:{t:'Distribusi Anjing per Rumah Tangga',d:'Jumlah rumah tangga menurut banyaknya anjing yang dipelihara. Arahkan kursor untuk melihat porsi populasi anjing di tiap kelompok.'},
+  sex:{t:'Komposisi Jenis Kelamin',d:'Proporsi jantan dan betina. "Tidak sesuai total" = selisih bila jantan + betina tidak sama dengan total yang dilaporkan.'},
+  banjar_top:{t:'Kepadatan HPR per Banjar',d:'20 banjar dengan jumlah anjing terbanyak, dipecah menurut status vaksinasi. Angka di atas batang = total anjing.'},
+  ster:{t:'Status Sterilisasi',d:'Sudah steril, butuh sterilisasi (menurut pemilik), dan tidak terkategori (selisih dengan total, mis. anak anjing atau tidak dijawab).'},
+  keep:{t:'Cara Pemeliharaan',d:'Dipelihara di dalam rumah/terkandang vs dibiarkan berkeliaran.'},
+  ster_desa:{t:'Sterilisasi & Pemeliharaan per Desa',d:'Perbandingan % anjing sudah steril dan % anjing berkeliaran di tiap desa.',f:'%steril = Σ steril ÷ Σ total; %berkeliaran = Σ berkeliaran ÷ (Σ berkeliaran + Σ di rumah)'},
+  cross:{t:'Analisis Silang',d:'Membandingkan cakupan vaksin dan steril antara rumah tangga yang melepas anjing (≥1 berkeliaran) dan yang mengandangkan semua anjingnya, serta antara KK dengan/tanpa anjing steril.'},
+  ternak:{t:'Kepemilikan Ternak',d:'Jumlah rumah tangga yang memelihara tiap jenis ternak. Satu KK dapat memelihara lebih dari satu jenis.'},
+  ternak_tbl:{t:'Ringkasan Ternak',d:'Median = nilai tengah jumlah ternak per KK pemilik; lebih tahan terhadap nilai ekstrem (mis. peternakan ayam besar) dibanding rata-rata.'},
+  trend:{t:'Progres Pendataan',d:'Jumlah rumah tangga yang didata per tanggal kunjungan (Harian) atau total berjalan (Kumulatif). Bila tanggal kunjungan kosong dipakai waktu mulai pengisian.'},
+  hour:{t:'Jam Pengisian Form',d:'Distribusi waktu mulai pengisian formulir (jam lokal perangkat pendata).'},
+  enum:{t:'Pendata Teraktif',d:'15 pendata dengan jumlah rumah tangga terbanyak. Identitas pendata disamarkan; hanya sebagian karakter yang ditampilkan.'},
+  enum_tbl:{t:'Kinerja Pendata',d:'Ringkasan produktivitas dan kualitas data per pendata (identitas disamarkan).'},
+  quality:{t:'Kualitas Data',d:'Pemeriksaan otomatis untuk membantu verifikasi lapangan. Satu catatan dapat terkena lebih dari satu aturan. Skor kualitas = % catatan tanpa tanda.'},
+  banjar_tbl:{t:'Rekap per Banjar',d:'Ringkasan seluruh indikator per banjar/lingkungan. Klik baris untuk memfilter dashboard ke banjar tersebut.'},
+  raw:{t:'Data Mentah',d:'Satu baris = satu rumah tangga. Klik baris untuk detail lengkap. Identitas pendata disamarkan.'},
+  // Kolom tabel
+  'col.kk':{t:'KK',d:'Jumlah rumah tangga terdata.'},
+  'col.dogs':{t:'Anjing',d:'Jumlah anjing berpemilik tercatat.'},
+  'col.cats':{t:'Kucing',d:'Jumlah kucing berpemilik tercatat.'},
+  'col.dpk':{t:'Anjing/KK',d:'Rata-rata anjing per KK pemilik anjing.',f:'Σ anjing ÷ KK dengan ≥1 anjing'},
+  'col.cov':{t:'Cakupan Vaksin Anjing',d:'Garis merah kecil = target 70%.',f:'Σ sudah ÷ (Σ sudah + Σ belum) × 100%'},
+  'col.ccov':{t:'Cakupan Vaksin Kucing',f:'Σ sudah ÷ (Σ sudah + Σ belum) × 100%',d:'Persentase kucing sudah divaksin.'},
+  'col.ster':{t:'Steril',d:'Persentase anjing sudah steril.',f:'Σ steril ÷ Σ total × 100%'},
+  'col.roam':{t:'Berkeliaran / Liar',d:'Persentase anjing yang dibiarkan berkeliaran.',f:'Σ berkeliaran ÷ (Σ berkeliaran + Σ di rumah) × 100%'},
+  'col.ru':{t:'Est. Berkeliaran Belum Vaksin',d:'Estimasi anjing yang berkeliaran dan belum divaksin (lihat definisi KPI).'},
+  'col.score':{t:'Skor Prioritas',d:'≥50 tinggi, 35–49 sedang, <35 rendah. "n<5" = anjing terlalu sedikit untuk dinilai.',f:'100 × [0,5×(1−cakupan) + 0,3×%berkeliaran + 0,2×%butuh steril]'},
+  'col.days':{t:'Hari',d:'Jumlah hari berbeda pendata mengirim formulir.'},
+  'col.perDay':{t:'KK per Hari',d:'Produktivitas rata-rata.',f:'KK ÷ hari aktif'},
+  'col.dur':{t:'Median Durasi',d:'Nilai tengah lama pengisian satu formulir (waktu selesai − waktu mulai). Durasi > 3 jam diabaikan.'},
+  'col.gpsOk':{t:'GPS Baik',d:'Persentase formulir dengan titik GPS berpresisi ≤ 50 m.'},
+  'col.flag':{t:'Bertanda QC',d:'Persentase formulir yang terkena ≥1 aturan kualitas data. Disorot bila > 30%.'},
+  'col.vax':{t:'Vaksin',d:'Jumlah anjing sudah divaksin rabies tahun ini.'},
+  'col.status':{t:'Status',d:'Warna = status vaksinasi anjing rumah tangga (hijau semua, oranye sebagian, merah belum, ungu hanya kucing). Label QC = jumlah tanda kualitas data.'},
+  'col.re':{t:'Rₑ',d:'Angka reproduksi efektif saat ini: rata-rata jumlah anjing yang tertular dari satu anjing rabies. > 1 = wabah dapat berkembang.'},
+  'col.pout':{t:'Peluang Wabah',d:'Peluang satu (atau n) anjing rabies yang masuk memicu wabah besar, bukan padam dengan sendirinya.',f:'1 − (1/Rₑ)ⁿ bila Rₑ > 1, selain itu 0'},
+  // Kualitas data
+  'q.gps_missing':{d:'Koordinat GPS tidak terisi.'},
+  'q.gps_prec':{d:'Presisi (akurasi) GPS lebih dari 50 meter — posisi titik bisa meleset.'},
+  'q.gps_far':{d:'Titik berada > 4 km dari median lokasi desanya — kemungkinan salah ambil lokasi.'},
+  'q.sum_sex':{d:'Jumlah jantan + betina tidak sama dengan total hewan yang dilaporkan (anjing atau kucing).'},
+  'q.sum_vax':{d:'Jumlah sudah vaksin + belum vaksin tidak sama dengan total.'},
+  'q.sum_keep':{d:'Jumlah berkeliaran + di dalam rumah tidak sama dengan total.'},
+  'q.sum_ster':{d:'Jumlah sudah steril + butuh steril melebihi total.'},
+  'q.zero':{d:'Jenis HPR dipilih tetapi jumlahnya 0 atau kosong.'},
+  'q.dup':{d:'Nama KK & banjar sama dengan catatan lain dan lokasinya ≤ 30 m. Catatan pertama tidak ditandai.'},
+  'q.dur':{d:'Lama pengisian < 1 menit atau > 60 menit.'},
+  'q.score':{d:'Persentase catatan yang lolos semua aturan pemeriksaan.'},
+  // Simulasi
+  sim_model:{t:'Model Simulasi',d:'Model kompartemen SEIV (Rentan–Inkubasi–Infeksius–Kebal vaksin) dengan dua kelompok kontak: anjing berkeliaran dan anjing di dalam rumah. Dihitung harian selama 365 hari. Lihat bagian Metodologi untuk rumus lengkap.'},
+  sim_params:{t:'Parameter',d:'Nilai awal mengikuti kisaran yang umum dilaporkan dalam kajian rabies anjing. Sesuaikan dengan kondisi lokal bila ada data yang lebih baik.'},
+  sim_chart:{t:'Proyeksi Kasus',d:'Jumlah anjing yang menjadi rabies (infeksius) per minggu, atau totalnya (kumulatif). Nilai pecahan adalah nilai harapan model.'},
+  re:{t:'Angka Reproduksi Efektif (Rₑ)',d:'Rata-rata jumlah anjing yang tertular dari satu anjing rabies pada kondisi saat ini — memperhitungkan R₀, cakupan vaksin, efektivitas vaksin, proporsi berkeliaran, dan anjing tak berpemilik.',f:'Rₑ = R₀ × Σ(a²·S) ÷ Σ(a²·N); a = 1 berkeliaran, w di rumah'},
+  re_banjar:{t:'Risiko Wabah per Banjar',d:'Rₑ dan peluang wabah dihitung terpisah untuk setiap banjar memakai data banjar tersebut dan parameter simulasi yang sama.'},
+  'sim.R0':{t:'R₀ (angka reproduksi dasar)',d:'Rata-rata jumlah anjing yang tertular dari satu anjing rabies bila belum ada anjing yang kebal, dengan pola pemeliharaan seperti di data. Kajian rabies anjing umumnya melaporkan sekitar 1,1–2.'},
+  'sim.eff':{t:'Efektivitas vaksin',d:'Persentase anjing tervaksin yang benar-benar terlindungi (memperhitungkan kegagalan vaksin, rantai dingin, dll.).'},
+  'sim.w':{t:'Bobot kontak anjing di dalam rumah',d:'Peluang kontak anjing yang dikandangkan relatif terhadap anjing berkeliaran. 30% berarti kontaknya 0,3 kali anjing berkeliaran.'},
+  'sim.stray':{t:'Anjing tak berpemilik',d:'Estimasi jumlah anjing liar tanpa pemilik sebagai persentase anjing berpemilik terdata. Dianggap berkeliaran dan belum divaksin. Isi 0 bila tidak ada.'},
+  'sim.turn':{t:'Pergantian populasi per tahun',d:'Persentase populasi anjing yang lahir/mati/berganti dalam setahun. Anak anjing baru lahir rentan, sehingga cakupan menurun tanpa vaksinasi ulang.'},
+  'sim.n0':{t:'Kasus awal',d:'Jumlah anjing rabies yang masuk ke wilayah pada awal simulasi.'},
+  'sim.target':{t:'Target cakupan kampanye',d:'Cakupan vaksin anjing berpemilik yang ingin dicapai melalui kampanye. Juga dipakai di simulasi anggaran.'},
+  'sim.month':{t:'Waktu kampanye',d:'Bulan ke- dimulainya kampanye vaksinasi setelah kasus pertama masuk (0 = segera). Kampanye berlangsung 30 hari.'},
+  'sim.strayReach':{t:'Anjing tak berpemilik terjangkau',d:'Persentase anjing tak berpemilik yang berhasil divaksin saat kampanye.'},
+  'sim.bites':{t:'Orang tergigit per anjing rabies',d:'Rata-rata jumlah orang yang digigit oleh satu anjing rabies selama masa sakitnya. Kajian lapangan umumnya melaporkan sekitar 0,4–0,6.'},
+  'sim.pep':{t:'Cakupan PEP',d:'Persentase korban gigitan anjing rabies yang mendapat profilaksis pascapajanan (cuci luka + VAR, dan SAR bila perlu) tepat waktu.'},
+  'sim.pdeath':{t:'Risiko kematian tanpa PEP',d:'Peluang korban gigitan anjing rabies meninggal bila tidak mendapat PEP. Kajian umumnya memperkirakan sekitar 15–20%, bergantung lokasi gigitan.'},
+  'simk.re':{t:'Rₑ saat ini',d:'Angka reproduksi efektif pada kondisi cakupan sekarang (lihat definisi Rₑ).'},
+  'simk.pout':{t:'Peluang wabah besar',d:'Peluang kasus awal memicu wabah yang menyebar luas, bukan padam sendiri.',f:'1 − (1/Rₑ)ⁿ'},
+  'simk.herd':{t:'Ambang kekebalan kelompok',d:'Cakupan vaksin merata minimum agar Rₑ < 1 pada satu waktu. Target program tetap 70% karena kekebalan turun seiring kelahiran anak anjing selama setahun dan cakupan tidak merata antarbanjar.',f:'(1 − 1/R₀) ÷ efektivitas vaksin'},
+  'simk.re2':{t:'Rₑ setelah kampanye',d:'Angka reproduksi efektif bila target cakupan kampanye tercapai.'},
+  'simk.cases':{t:'Kasus rabies anjing (12 bulan)',d:'Total anjing yang menjadi rabies selama 12 bulan menurut model.'},
+  'simk.exp':{t:'Paparan gigitan pada manusia',d:'Perkiraan jumlah orang tergigit anjing rabies.',f:'kasus anjing × orang tergigit per anjing rabies'},
+  'simk.death':{t:'Kematian manusia',d:'Perkiraan kematian akibat rabies pada korban yang tidak mendapat PEP.',f:'paparan × (1 − cakupan PEP) × risiko kematian'},
+  'simk.avert':{t:'Dampak kampanye',d:'Selisih kasus anjing dan kematian manusia antara skenario tanpa dan dengan kampanye.'},
+  // Anggaran
+  budget_model:{t:'Simulasi Anggaran',d:'Perkiraan kebutuhan biaya program satu tahun. Volume dihitung dari data dan simulasi wabah; biaya satuan adalah asumsi yang dapat diubah. Bukan pengganti RAB resmi.'},
+  budget_chart:{t:'Komposisi Anggaran',d:'Besar biaya tiap komponen kegiatan, termasuk kontingensi.'},
+  'bud.mode':{t:'Mode vaksinasi',d:'Tahunan = vaksinasi ulang seluruh sasaran sampai target (dianjurkan, karena kekebalan vaksin dan populasi berganti). Kesenjangan = hanya menambah anjing yang belum divaksin agar mencapai target.'},
+  'bud.cats':{t:'Sertakan kucing',d:'Apakah vaksinasi kucing ikut dianggarkan dengan target cakupan yang sama.'},
+  'bud.sterPct':{t:'Target sterilisasi',d:'Persentase anjing yang "butuh sterilisasi" (menurut data) yang akan disterilkan tahun ini.'},
+  'bud.vaccine':{t:'Vaksin per dosis',d:'Harga satu dosis vaksin rabies hewan termasuk spuit/jarum.'},
+  'bud.ops':{t:'Operasional per ekor',d:'Biaya penandaan (kalung/cat), kartu vaksin, logistik dan rantai dingin per hewan.'},
+  'bud.cap':{t:'Kapasitas tim per hari',d:'Rata-rata jumlah hewan yang dapat divaksin satu tim vaksinator dalam satu hari kerja.'},
+  'bud.teams':{t:'Jumlah tim',d:'Jumlah tim vaksinator yang bekerja paralel. Menentukan lama kampanye (hari kalender), tidak mengubah total hari-tim.'},
+  'bud.teamDay':{t:'Biaya tim per hari',d:'Honor, transport dan konsumsi satu tim untuk satu hari kerja.'},
+  'bud.sterCost':{t:'Sterilisasi per ekor',d:'Biaya rata-rata operasi sterilisasi termasuk obat bius dan perawatan pascaoperasi.'},
+  'bud.kie':{t:'KIE per banjar',d:'Komunikasi, Informasi & Edukasi: sosialisasi, materi cetak dan pertemuan banjar, per banjar sasaran.'},
+  'bud.surv':{t:'Surveilans per kasus',d:'Investigasi, pengambilan & pengiriman sampel, dan uji laboratorium per kasus suspek rabies.'},
+  'bud.var':{t:'PEP per korban',d:'Paket Vaksin Anti Rabies (VAR) lengkap per korban gigitan termasuk layanan. Tambahkan biaya SAR bila diperlukan.'},
+  'bud.bites':{t:'Gigitan rutin per tahun',d:'Kasus gigitan HPR yang tetap memerlukan VAR meskipun tidak ada wabah — isi dari data Lapor Gigitan wilayah ini.'},
+  'bud.cont':{t:'Kontingensi',d:'Cadangan untuk biaya tak terduga, dihitung dari subtotal.'},
+  'budk.total':{t:'Total anggaran',d:'Jumlah seluruh komponen termasuk kontingensi.'},
+  'budk.perdog':{t:'Biaya per anjing divaksin',d:'(Vaksin + operasional + tim lapangan untuk anjing) ÷ jumlah anjing divaksin.'},
+  'budk.days':{t:'Durasi kampanye',d:'Hari kalender kampanye vaksinasi.',f:'⌈hari-tim ÷ jumlah tim⌉'},
+  'budk.saved':{t:'Biaya respons dihindari',d:'Biaya surveilans dan PEP yang tidak perlu dikeluarkan karena kampanye mencegah kasus.',f:'(kasus tanpa − dengan kampanye) × surveilans + (paparan tanpa − dengan) × cakupan PEP × biaya PEP'}
+};
+
+/* Tooltip engine */
+const tipbox=document.createElement('div'); tipbox.id='tipbox'; tipbox.setAttribute('role','tooltip'); document.body.appendChild(tipbox);
+let tipEl=null;
+function tip(key){ return DEF[key] ? '<i class="tip" tabindex="0" data-tip="'+key+'" aria-label="Info">i</i>' : ''; }
+function showTip(el){
+  const d=DEF[el.dataset.tip]; if(!d) return; tipEl=el;
+  tipbox.innerHTML=(d.t?'<b>'+d.t+'</b><br>':'')+d.d+(d.f?'<div class="tf">'+d.f+'</div>':'');
+  tipbox.style.opacity=1; tipbox.style.left='0px'; tipbox.style.top='0px';
+  const r=el.getBoundingClientRect(), w=tipbox.offsetWidth, h=tipbox.offsetHeight;
+  let x=r.left+r.width/2-w/2; x=Math.max(8,Math.min(window.innerWidth-w-8,x));
+  let y=r.top-h-8; if(y<8) y=r.bottom+8;
+  tipbox.style.left=x+'px'; tipbox.style.top=y+'px';
+}
+function hideTip(){ tipbox.style.opacity=0; tipEl=null; }
+document.addEventListener('mouseover',e=>{ const t=e.target.closest&&e.target.closest('.tip'); if(t) showTip(t); });
+document.addEventListener('mouseout',e=>{ const t=e.target.closest&&e.target.closest('.tip'); if(t) hideTip(); });
+document.addEventListener('focusin',e=>{ if(e.target.classList&&e.target.classList.contains('tip')) showTip(e.target); });
+document.addEventListener('focusout',e=>{ if(e.target.classList&&e.target.classList.contains('tip')) hideTip(); });
+document.addEventListener('click',e=>{ const t=e.target.closest('.tip'); if(t){ e.stopPropagation(); e.preventDefault(); showTip(t); } else if(tipEl) hideTip(); },true);
+window.addEventListener('scroll',()=>{ if(tipEl) showTip(tipEl); },{passive:true}); // ikuti posisi ikon saat menggulir
+function colTip(k){ return tip('col.'+k); }
+
+// Pasang ikon info pada judul grafik
+const CHART_TIPS={'ch-cov-desa':'cov_desa','ch-vax-desa':'vax_desa','ch-risk':'risk','tb-priority':'prio','ch-cat-vax':'cat_vax','ch-gap':'gap','ch-hh-vax':'hh_vax',
+  'ch-pop-desa':'pop_desa','ch-own':'own','ch-dog-hist':'hist','ch-sex':'sex','ch-banjar-top':'banjar_top','ch-ster':'ster','ch-keep':'keep','ch-ster-desa':'ster_desa',
+  'ch-cross':'cross','ch-ternak':'ternak','tb-ternak':'ternak_tbl','ch-trend':'trend','ch-hour':'hour','ch-enum':'enum','tb-enum':'enum_tbl'};
+function installTips(){
+  for(const id in CHART_TIPS){ const card=$(id)&&$(id).closest('.card'); const h=card&&card.querySelector('h3'); if(h && !h.querySelector('.tip')) h.insertAdjacentHTML('beforeend',tip(CHART_TIPS[id])); }
+  const sec={'s-peta':'map','s-kualitas':'quality','s-banjar':'banjar_tbl','s-data':'raw'};
+  for(const id in sec){ const h=document.querySelector('#'+id+' .section-head h2'); if(h && !h.querySelector('.tip')) h.insertAdjacentHTML('beforeend',tip(sec[id])); }
+  const hs=document.querySelector('#s-peta .map-layout h3'); if(hs && !hs.querySelector('.tip')) hs.insertAdjacentHTML('beforeend',tip('hotspot'));
+}
+
+/* =========================================================================
+   SIMULASI WABAH RABIES
+   ========================================================================= */
+const SIM_PARAMS=[
+  {g:'Epidemiologi'},
+  {k:'R0',label:'R₀ dasar',min:1,max:2.5,step:0.05,def:1.5,f:v=>fmt(v,2)},
+  {k:'eff',label:'Efektivitas vaksin',min:50,max:100,step:1,def:90,f:v=>v+'%'},
+  {k:'w',label:'Kontak anjing di dalam rumah',min:0,max:100,step:5,def:30,f:v=>v+'%'},
+  {k:'stray',label:'Anjing tak berpemilik',min:0,max:100,step:5,def:15,f:v=>v+'%'},
+  {k:'turn',label:'Pergantian populasi/tahun',min:0,max:60,step:5,def:30,f:v=>v+'%'},
+  {k:'n0',label:'Kasus awal masuk',min:1,max:10,step:1,def:1,f:v=>v+' ekor'},
+  {g:'Skenario kampanye'},
+  {k:'target',label:'Target cakupan kampanye',min:40,max:95,step:5,def:70,f:v=>v+'%'},
+  {k:'month',label:'Kampanye dimulai bulan ke-',min:0,max:11,step:1,def:1,f:v=>String(v)},
+  {k:'strayReach',label:'Anjing tak berpemilik terjangkau',min:0,max:100,step:5,def:30,f:v=>v+'%'},
+  {g:'Dampak pada manusia'},
+  {k:'bites',label:'Orang tergigit per anjing rabies',min:0,max:3,step:0.1,def:0.5,f:v=>fmt(v,1)},
+  {k:'pep',label:'Cakupan PEP pada korban',min:0,max:100,step:5,def:80,f:v=>v+'%'},
+  {k:'pdeath',label:'Risiko kematian tanpa PEP',min:5,max:40,step:1,def:16,f:v=>v+'%'}
+];
+const SIM={}; SIM_PARAMS.forEach(p=>{ if(p.k) SIM[p.k]=p.def; });
+const INCUB_DAYS=22.3, INFECT_DAYS=3.1, SIM_DAYS=364, CAMPAIGN_DAYS=30;
+let simMode='week', LAST_SIM=null;
+
+function buildSimParams(){
+  $('sim-params').innerHTML=SIM_PARAMS.map(p=>p.g?'<div class="prm-group">'+p.g+'</div>':
+    '<div class="prm"><label for="sp-'+p.k+'">'+p.label+tip('sim.'+p.k)+'<output id="so-'+p.k+'">'+p.f(SIM[p.k])+'</output></label><input type="range" id="sp-'+p.k+'" min="'+p.min+'" max="'+p.max+'" step="'+p.step+'" value="'+SIM[p.k]+'"></div>').join('');
+}
+// Struktur populasi dari data: anjing berkeliaran/di rumah × sudah/belum vaksin
+function dogStructure(rows){
+  let RU=0,RV=0,HU=0,HV=0;
+  rows.forEach(p=>{ const t=p.d.t; if(!t) return;
+    const r=Math.min(p.d.r,t), u=Math.min(p.d.u,t), ru=Math.min(p.roamUnvax,r,u);
+    const rv=Math.max(0,r-ru), hu=Math.max(0,u-ru), hv=Math.max(0,t-ru-rv-hu);
+    RU+=ru; RV+=rv; HU+=hu; HV+=hv; });
+  return {RU,RV,HU,HV,owned:RU+RV+HU+HV};
+}
+function classes(st, prm, cov){ // cov: null = kondisi data; angka = cakupan seragam untuk anjing berpemilik
+  const eff=prm.eff/100, w=prm.w/100, stray=st.owned*prm.stray/100;
+  const Or=st.RU+st.RV, Oh=st.HU+st.HV;
+  let Vr, Vh, strayV=0;
+  if(cov==null){ Vr=st.RV*eff; Vh=st.HV*eff; }
+  else { Vr=Or*cov*eff; Vh=Oh*cov*eff; strayV=stray*(prm.strayReach/100)*eff; }
+  return {w, Nr:Or+stray, Nh:Oh, Vr:Vr+strayV, Vh, Or, Oh, stray};
+}
+// R0 = angka reproduksi populasi apa adanya (pola pemeliharaan sesuai data) bila belum ada yang kebal.
+// Rₑ = R0 × Σ(a²·S) ÷ Σ(a²·N)  — anjing berkeliaran (a=1) lebih berpengaruh daripada anjing di rumah (a=w).
+function reffOf(c, R0){
+  const den=c.Nr+c.w*c.w*c.Nh; if(den<=0) return null;
+  return R0*((c.Nr-c.Vr)+c.w*c.w*(c.Nh-c.Vh))/den;
+}
+const pOutbreak=(re,n)=> re==null||re<=1 ? 0 : 1-Math.pow(1/re,n);
+function herdCoverage(st, prm){ // cakupan merata (semua anjing) agar Rₑ = 1
+  if(st.owned<=0) return null; return (1-1/prm.R0)/(prm.eff/100);
+}
+function runSim(st, prm, campaign){
+  const c=classes(st,prm,null); const a=[1,c.w];
+  const N=[c.Nr,c.Nh]; if(N[0]+N[1]<=0) return null;
+  const S=[c.Nr-c.Vr, c.Nh-c.Vh], E=[0,0], I=[0,0], V=[c.Vr,c.Vh];
+  const n0=Math.min(prm.n0, S[0]+S[1]); const into=S[0]>=n0?0:1; S[into]-=n0; I[into]+=n0;
+  const SaN=a[0]*N[0]+a[1]*N[1], Sa2N=a[0]*a[0]*N[0]+a[1]*a[1]*N[1];
+  const beta=prm.R0/INFECT_DAYS*SaN/Sa2N, sig=1/INCUB_DAYS, gam=1/INFECT_DAYS, mu=prm.turn/100/365;
+  const eff=prm.eff/100, tgt=prm.target/100;
+  const qr = c.Nr>0 ? eff*(tgt*c.Or + (prm.strayReach/100)*c.stray)/c.Nr : 0, qh=eff*tgt;
+  const t0=Math.round(prm.month*30.4), t1=t0+CAMPAIGN_DAYS;
+  const weekly=[], cum=[]; let total=0, wk=0;
+  for(let d=0; d<SIM_DAYS; d++){
+    const Nk=[S[0]+E[0]+I[0]+V[0], S[1]+E[1]+I[1]+V[1]];
+    const den=a[0]*Nk[0]+a[1]*Nk[1]; const force=den>0? beta*(a[0]*I[0]+a[1]*I[1])/den : 0;
+    let newCases=0;
+    for(let k=0;k<2;k++){
+      const inf=Math.min(S[k], a[k]*force*S[k]), onset=sig*E[k], die=gam*I[k], birth=mu*Nk[k];
+      S[k]+=birth-inf-mu*S[k]; E[k]+=inf-onset-mu*E[k]; I[k]+=onset-die-mu*I[k]; V[k]-=mu*V[k];
+      newCases+=onset;
+      if(campaign && d>=t0 && d<t1){ const Nn=S[k]+E[k]+I[k]+V[k]; const q=k===0?qr:qh; const need=Math.max(0,q*Nn-V[k]); const mv=Math.min(S[k], need/(t1-d)); S[k]-=mv; V[k]+=mv; }
+    }
+    total+=newCases; wk+=newCases;
+    if(d%7===6 || d===SIM_DAYS-1){ weekly.push(wk); cum.push(total); wk=0; }
+  }
+  const exp=total*prm.bites, deaths=exp*(1-prm.pep/100)*(prm.pdeath/100);
+  return {weekly,cum,cases:total,exp,deaths,pep:exp*prm.pep/100,t0,t1};
+}
+function fmtN(v){ return v==null?'–': v<10 ? fmt(v,1) : nf.format(Math.round(v)); }
+
+function renderSim(){
+  const st=dogStructure(VIEW);
+  const prm=Object.assign({},SIM);
+  const cNow=classes(st,prm,null), re=reffOf(cNow,prm.R0), po=pOutbreak(re,prm.n0);
+  const herd=herdCoverage(st,prm), re2=reffOf(classes(st,prm,prm.target/100),prm.R0);
+  const base=runSim(st,prm,false), camp=runSim(st,prm,true);
+  LAST_SIM={st,base,camp,prm};
+  const mk=(key,label,val,sub,cls)=>'<div class="mk"><div class="l">'+label+tip(key)+'</div><div class="v '+(cls||'')+'">'+val+'</div><div class="s">'+(sub||'')+'</div></div>';
+  if(!base){ $('sim-kpis').innerHTML='<div class="empty" style="grid-column:1/-1">Tidak ada data anjing pada filter ini.</div>'; emptyChart('ch-sim'); emptyChart('ch-re-desa'); $('tb-re-banjar').innerHTML=''; $('sim-note').textContent=''; return; }
+  $('sim-kpis').innerHTML=[
+    mk('simk.re','Rₑ saat ini',fmt(re,2),re>1?'di atas 1 — wabah dapat berkembang':'di bawah 1 — wabah cenderung padam',re>1?'bad':'good'),
+    mk('simk.pout','Peluang wabah besar',fmtPct(po*100,0),'bila '+prm.n0+' anjing rabies masuk (dari Rₑ awal)',po>0.3?'bad':''),
+    mk('simk.herd','Ambang kekebalan',herd==null?'–':herd>1?'> 100%':fmtPct(Math.max(0,herd)*100,0),'cakupan merata minimum; data saat ini '+fmtPct(agg(VIEW).dogCov,0)),
+    mk('simk.re2','Rₑ setelah kampanye',fmt(re2,2),'target '+prm.target+'% · tak berpemilik '+prm.strayReach+'%',re2>1?'bad':'good'),
+    mk('simk.cases','Kasus anjing 12 bln',fmtN(base.cases)+' → '+fmtN(camp.cases),'tanpa → dengan kampanye'),
+    mk('simk.exp','Gigitan pada manusia',fmtN(base.exp)+' → '+fmtN(camp.exp),'orang terpapar anjing rabies'),
+    mk('simk.death','Kematian manusia',fmt(base.deaths,1)+' → '+fmt(camp.deaths,1),'tanpa → dengan kampanye',base.deaths>=0.5?'bad':''),
+    mk('simk.avert','Dampak kampanye','−'+fmtPct(pct(base.cases-camp.cases,base.cases)||0,0),fmtN(base.cases-camp.cases)+' kasus anjing & '+fmt(base.deaths-camp.deaths,1)+' kematian dicegah','good')
+  ].join('');
+  $('sim-note').textContent='Populasi model: '+nf.format(Math.round(st.owned))+' anjing berpemilik + '+nf.format(Math.round(cNow.stray))+' estimasi tak berpemilik. Kampanye hari ke-'+base.t0+'–'+base.t1+'.';
+  const labels=base.weekly.map((_,i)=>'Mg '+(i+1));
+  const A=simMode==='week'?base.weekly:base.cum, B=simMode==='week'?camp.weekly:camp.cum;
+  const wkStart=Math.floor(base.t0/7);
+  mk_chart('ch-sim',{type:'line',data:{labels,datasets:[
+      {label:'Tanpa kampanye',data:A.map(v=>+v.toFixed(2)),borderColor:COL.red,backgroundColor:'rgba(193,69,61,.08)',fill:true,tension:.3,pointRadius:0,pointHoverRadius:5},
+      {label:'Dengan kampanye',data:B.map(v=>+v.toFixed(2)),borderColor:COL.good,backgroundColor:'rgba(15,127,168,.08)',fill:true,tension:.3,pointRadius:0,pointHoverRadius:5}]},
+    options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:13,font:{size:10}}},y:{beginAtZero:true,title:{display:true,text:simMode==='week'?'Kasus baru per minggu':'Kasus kumulatif'},ticks:{callback:v=>v<1?fmt(v,2):v<10?fmt(v,1):nf.format(Math.round(v))}}},
+      plugins:{refLines:{lines:[{axis:'x',value:wkStart,label:'Kampanye',color:COL.navy}]},tooltip:{callbacks:{title:it=>'Minggu ke-'+(it[0].dataIndex+1)+' (bulan '+(Math.floor(it[0].dataIndex/4.35)+1)+')',label:c=>' '+c.dataset.label+': '+fmt(c.raw,c.raw<10?2:0)+' anjing rabies'}}}}});
+  // Re per desa
+  const D=desaAggs().map(x=>{ const rows=VIEW.filter(p=>p.desa===x.k); const s2=dogStructure(rows); const r=reffOf(classes(s2,prm,null),prm.R0); return {l:x.l,re:r,po:pOutbreak(r,prm.n0),dogs:s2.owned}; }).filter(x=>x.re!=null).sort((a,b)=>b.re-a.re);
+  if(D.length) hbar('ch-re-desa',D.map(x=>x.l),[{data:D.map(x=>+x.re.toFixed(3)),backgroundColor:D.map(x=>x.re>1?COL.red:COL.good),
+      datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700',size:10.5},formatter:v=>fmt(v,2)}}],
+    {x:{min:0,suggestedMax:Math.max(1.5,...D.map(x=>x.re))*1.1,ticks:{callback:v=>fmt(v,1)}},
+     tooltip:{callbacks:{label:c=>{const x=D[c.dataIndex];return [' Rₑ: '+fmt(x.re,2),' Peluang wabah ('+prm.n0+' kasus awal): '+fmtPct(x.po*100,0),' Anjing berpemilik: '+nf.format(x.dogs)];}}},
+     plugins:{refLines:{lines:[{axis:'x',value:1,label:'Rₑ = 1'}]}},extra:{layout:{padding:{right:36}}}});
+  else emptyChart('ch-re-desa');
+  // Re per banjar
+  const BJ=banjarAggs().filter(x=>x.a.d.t>=5).map(x=>{ const s2=dogStructure(x.rows); const r=reffOf(classes(s2,prm,null),prm.R0); return {k:x.k,desa:x.desa,l:x.l,dl:x.dl,re:r,po:pOutbreak(r,prm.n0),cov:x.a.dogCov,roam:x.a.dogRoam,dogs:x.a.d.t}; }).filter(x=>x.re!=null).sort((a,b)=>b.re-a.re);
+  $('tb-re-banjar').innerHTML='<thead><tr><th>#</th><th>Banjar</th><th class="num">Anjing'+colTip('dogs')+'</th><th class="num">Vaksin'+colTip('cov')+'</th><th class="num">Liar'+colTip('roam')+'</th><th class="num">Rₑ'+colTip('re')+'</th><th class="num">Peluang wabah'+colTip('pout')+'</th></tr></thead><tbody>'+
+    (BJ.length?BJ.slice(0,30).map((x,i)=>'<tr class="click" data-banjar="'+esc(x.k)+'" data-desa="'+esc(x.desa)+'"><td>'+(i+1)+'</td><td><b>'+esc(x.l)+'</b><div style="font-size:10.5px;color:var(--muted)">'+esc(x.dl)+'</div></td><td class="num">'+nf.format(x.dogs)+'</td><td class="num">'+fmtPct(x.cov,0)+'</td><td class="num">'+fmtPct(x.roam,0)+'</td><td class="num"><b style="color:'+(x.re>1?COL.red:'#1E6B48')+'">'+fmt(x.re,2)+'</b></td><td class="num"><span class="pill '+(x.po>=0.3?'p-hi':x.po>0?'p-md':'p-lo')+'">'+fmtPct(x.po*100,0)+'</span></td></tr>').join(''):'<tr><td colspan="7" class="empty">Tidak ada banjar dengan ≥5 anjing.</td></tr>')+'</tbody>';
+  renderBudget();
+}
+
+/* =========================================================================
+   SIMULASI ANGGARAN
+   ========================================================================= */
+const BUD_PARAMS=[
+  {k:'mode',label:'Mode vaksinasi',type:'select',opts:[['all','Tahunan — semua sasaran'],['gap','Kesenjangan saja']],def:'all'},
+  {k:'cats',label:'Sertakan kucing',type:'select',opts:[['1','Ya'],['0','Tidak']],def:'1'},
+  {k:'sterPct',label:'Target sterilisasi (% butuh steril)',def:30,min:0,max:100,unit:'%'},
+  {k:'cont',label:'Kontingensi',def:10,min:0,max:50,unit:'%'},
+  {k:'vaccine',label:'Vaksin hewan per dosis',def:15000,rp:1},
+  {k:'ops',label:'Operasional per ekor',def:10000,rp:1},
+  {k:'cap',label:'Kapasitas tim per hari (ekor)',def:60,min:1},
+  {k:'teams',label:'Jumlah tim',def:10,min:1},
+  {k:'teamDay',label:'Biaya tim per hari',def:750000,rp:1},
+  {k:'sterCost',label:'Sterilisasi per ekor',def:350000,rp:1},
+  {k:'kie',label:'KIE per banjar',def:1000000,rp:1},
+  {k:'surv',label:'Surveilans per kasus suspek',def:750000,rp:1},
+  {k:'var',label:'PEP (paket VAR) per korban',def:1200000,rp:1},
+  {k:'bites',label:'Gigitan rutin per tahun (orang)',def:0,min:0,hint:'Isi dari data Lapor Gigitan'}
+];
+const BUD={}; BUD_PARAMS.forEach(p=>BUD[p.k]=p.def);
+function buildBudInputs(){
+  $('bud-inputs').innerHTML=BUD_PARAMS.map(p=>'<div class="bi"><label for="bp-'+p.k+'">'+p.label+(p.rp?' (Rp)':'')+tip('bud.'+p.k)+'</label>'+
+    (p.type==='select'?'<select id="bp-'+p.k+'">'+p.opts.map(o=>'<option value="'+o[0]+'"'+(String(BUD[p.k])===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'
+      :'<input type="number" inputmode="numeric" id="bp-'+p.k+'" value="'+BUD[p.k]+'" min="'+(p.min!=null?p.min:0)+'"'+(p.max!=null?' max="'+p.max+'"':'')+' step="'+(p.rp?1000:1)+'">')+
+    (p.hint?'<div class="hint">'+p.hint+'</div>':'')+'</div>').join('');
+}
+function rp(v){ return 'Rp '+nf.format(Math.round(v||0)); }
+function rpShort(v){ v=v||0; if(Math.abs(v)>=1e9) return 'Rp '+fmt(v/1e9,2)+' M'; if(Math.abs(v)>=1e6) return 'Rp '+fmt(v/1e6,1)+' jt'; if(Math.abs(v)>=1e3) return 'Rp '+fmt(v/1e3,0)+' rb'; return rp(v); }
+function renderBudget(){
+  const S=LAST_SIM; const A=agg(VIEW); const B=BUD;
+  const tgt=SIM.target/100, D=A.d.t, C=A.c.t, stray=D*SIM.stray/100, strayVax=Math.round(stray*SIM.strayReach/100);
+  const nDog = (B.mode==='all' ? Math.round(tgt*D) : Math.max(0,Math.round(tgt*(A.d.v+A.d.u)-A.d.v))) + strayVax;
+  const nCat = B.cats==='1' ? (B.mode==='all' ? Math.round(tgt*C) : Math.max(0,Math.round(tgt*(A.c.v+A.c.u)-A.c.v))) : 0;
+  const teamDays=Math.ceil((nDog+nCat)/Math.max(1,B.cap)), calDays=Math.ceil(teamDays/Math.max(1,B.teams));
+  const nSter=Math.round(A.d.n*B.sterPct/100), nBanjar=new Set(VIEW.map(p=>p.banjarId)).size;
+  const camp=S&&S.camp, base=S&&S.base;
+  const casesC=camp?Math.ceil(camp.cases):0, pepC=Math.ceil((camp?camp.pep:0)+(+B.bites||0));
+  const rows=[
+    ['Vaksin & operasional anjing',nDog,'ekor',B.vaccine+B.ops,'Target '+SIM.target+'% × '+nf.format(D)+' anjing'+(B.mode==='gap'?' (selisih)':'')+(strayVax?' + '+nf.format(strayVax)+' tak berpemilik':'')],
+    ['Vaksin & operasional kucing',nCat,'ekor',B.vaccine+B.ops,B.cats==='1'?'Target '+SIM.target+'% × '+nf.format(C)+' kucing'+(B.mode==='gap'?' (selisih)':''):'Tidak disertakan'],
+    ['Tim vaksinator lapangan',teamDays,'hari-tim',B.teamDay,nf.format(nDog+nCat)+' hewan ÷ '+B.cap+'/hari; '+B.teams+' tim → '+calDays+' hari kalender'],
+    ['Sterilisasi anjing',nSter,'ekor',B.sterCost,B.sterPct+'% × '+nf.format(A.d.n)+' anjing butuh steril'],
+    ['KIE / sosialisasi',nBanjar,'banjar',B.kie,'Seluruh banjar pada filter'],
+    ['Surveilans & uji lab',casesC,'kasus',B.surv,'Kasus anjing rabies (simulasi dengan kampanye)'],
+    ['PEP / VAR korban gigitan',pepC,'orang',B.var,'Korban anjing rabies yang mendapat PEP'+(+B.bites?' + '+nf.format(B.bites)+' gigitan rutin':'')]
+  ].map(r=>({name:r[0],qty:r[1],unit:r[2],cost:r[3],note:r[4],total:r[1]*r[3]}));
+  const sub=sum(rows,r=>r.total), cont=sub*B.cont/100, total=sub+cont;
+  rows.push({name:'Kontingensi',qty:B.cont,unit:'%',cost:sub,note:'Dari subtotal',total:cont,pct:1});
+  const dogCost=rows[0].total+(nDog+nCat>0?rows[2].total*nDog/(nDog+nCat):0);
+  const saved = (base&&camp) ? (base.cases-camp.cases)*B.surv + (base.pep-camp.pep)*B.var : 0;
+  const mk=(key,label,val,sub2,cls)=>'<div class="mk"><div class="l">'+label+tip(key)+'</div><div class="v '+(cls||'')+'">'+val+'</div><div class="s">'+(sub2||'')+'</div></div>';
+  $('bud-kpis').innerHTML=[
+    mk('budk.total','Total anggaran',rpShort(total),rp(total)),
+    mk('budk.perdog','Per anjing divaksin',nDog?rp(dogCost/nDog):'–',nf.format(nDog)+' anjing divaksin'),
+    mk('budk.days','Durasi kampanye',nf.format(calDays)+' hari',nf.format(teamDays)+' hari-tim · '+B.teams+' tim'),
+    mk('budk.saved','Biaya respons dihindari',rpShort(Math.max(0,saved)),'surveilans + PEP yang tidak terjadi','good')
+  ].join('');
+  const R=rows.filter(r=>r.total>0);
+  if(R.length) hbar('ch-budget',R.map(r=>r.name),[{data:R.map(r=>Math.round(r.total)),backgroundColor:R.map(r=>r.name==='Kontingensi'?COL.unk:/PEP|Surveilans/.test(r.name)?COL.need:COL.good),
+      datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700',size:10.5},formatter:v=>rpShort(v)+' · '+fmt(pct(v,total),0)+'%'}}],
+    {x:{ticks:{callback:v=>rpShort(v)}},tooltip:{callbacks:{label:c=>' '+rp(c.raw)+' ('+fmtPct(pct(c.raw,total))+')'}},extra:{layout:{padding:{right:120}}}});
+  else emptyChart('ch-budget','Tidak ada kebutuhan anggaran pada filter ini.');
+  $('bud-note').textContent='Biru = pencegahan, oranye = respons kasus (bergantung hasil simulasi), abu-abu = kontingensi.';
+  $('tb-budget').innerHTML='<thead><tr><th>Komponen</th><th class="num">Volume</th><th>Satuan</th><th class="num">Biaya satuan</th><th class="num">Total</th><th class="num">Porsi</th><th>Dasar perhitungan</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td><b>'+r.name+'</b></td><td class="num">'+nf.format(r.qty)+'</td><td>'+r.unit+'</td><td class="num">'+(r.pct?rp(r.cost)+' (subtotal)':rp(r.cost))+'</td><td class="num"><b>'+rp(r.total)+'</b></td><td class="num">'+fmtPct(pct(r.total,total),1)+'</td><td class="wrap" style="color:var(--muted);font-size:11px">'+esc(r.note)+'</td></tr>').join('')+
+    '<tr class="total"><td>TOTAL</td><td></td><td></td><td></td><td class="num">'+rp(total)+'</td><td class="num">100%</td><td class="wrap" style="font-weight:600;font-size:11px">≈ '+rp(A.kk?total/A.kk:0)+' per KK terdata</td></tr></tbody>';
+}
+function mk_chart(id,cfg){ return mk(id,cfg); }
+
+/* Events simulasi & anggaran */
+let simTimer=null;
+function onSimInput(e){ const k=e.target.id.replace('sp-',''); const p=SIM_PARAMS.find(x=>x.k===k); SIM[k]=+e.target.value; $('so-'+k).textContent=p.f(SIM[k]); clearTimeout(simTimer); simTimer=setTimeout(renderSim,90); }
+function onBudInput(e){ const k=e.target.id.replace('bp-',''); const p=BUD_PARAMS.find(x=>x.k===k); BUD[k]=p.type==='select'?e.target.value:Math.max(p.min!=null?p.min:0,+e.target.value||0); clearTimeout(simTimer); simTimer=setTimeout(renderBudget,120); }
+
+/* =========================================================================
    UPDATE
    ========================================================================= */
 function update(){
@@ -1191,6 +1609,7 @@ function update(){
   renderKPIs(A); renderInsights(A);
   try{ renderMap(); }catch(e){ console.error('map',e); }
   renderVaksin(); renderPopulasi(A); renderSteril(A); renderTernak(); renderAktivitas(); renderQuality(); renderBanjar(); renderRaw();
+  renderSim();
 }
 
 /* =========================================================================
@@ -1264,6 +1683,13 @@ document.addEventListener('click',e=>{
   const tr=e.target.closest('tr.click');
   if(tr){ if(tr.dataset.i!=null) openDetail(+tr.dataset.i); else if(tr.dataset.banjar){ F.kec='';F.desa=tr.dataset.desa;F.banjar=tr.dataset.banjar; update(); window.scrollTo({top:0,behavior:'smooth'}); } else if(tr.dataset.pendata){ setFilter('pendata',tr.dataset.pendata); window.scrollTo({top:0,behavior:'smooth'}); } }
 });
+buildSimParams(); buildBudInputs(); installTips();
+$('sim-params').addEventListener('input',onSimInput);
+$('bud-inputs').addEventListener('input',onBudInput);
+$('bud-inputs').addEventListener('change',onBudInput);
+$('sim-reset').onclick=()=>{ SIM_PARAMS.forEach(p=>{ if(p.k) SIM[p.k]=p.def; }); buildSimParams(); renderSim(); };
+$('bud-reset').onclick=()=>{ BUD_PARAMS.forEach(p=>BUD[p.k]=p.def); buildBudInputs(); renderBudget(); };
+$('seg-sim').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; simMode=b.dataset.v; [...$('seg-sim').children].forEach(x=>x.classList.toggle('on',x===b)); renderSim(); };
 $('modal').onclick=e=>{ if(e.target.id==='modal') closeModal(); };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 // nav highlight
