@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaCon Analytics — Pendataan Hewan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
+<style>
+:root{
+  --navy:#0B3D57; --navy2:#0F4A66; --teal:#0F7FA8; --teal-lt:#E3F1F7;
+  --gold:#D99A3D; --gold-dark:#A86A14; --orange:#D98A2B; --orange-lt:#FBEBD6;
+  --green:#2E9E6B; --red:#C1453D; --purple:#7A5BA6; --pink:#C9506B;
+  --bg:#F2F5F7; --card:#FFFFFF; --ink:#12232E; --ink2:#3C4E57; --muted:#6B7C84; --line:#E2E8EB; --line2:#EEF2F4;
+  --radius:14px; --shadow:0 1px 2px rgba(16,40,52,.05),0 4px 14px rgba(16,40,52,.04);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased;}
+a{color:var(--teal);}
+button,select,input{font-family:inherit;}
+
+/* ---------- Topbar ---------- */
+.topbar{background:linear-gradient(115deg,#082F44 0%,var(--navy) 45%,#13597A 100%);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.topbar-inner{max-width:1440px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:11px;}
+.brand .logo{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.12);display:grid;place-items:center;border:1px solid rgba(255,255,255,.2);}
+.brand .t1{font-weight:800;font-size:16px;letter-spacing:.2px;line-height:1.1;}
+.brand .t2{font-size:11px;color:rgba(255,255,255,.7);font-weight:500;}
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.sync-status{display:flex;align-items:center;gap:7px;font-size:11.5px;color:rgba(255,255,255,.85);padding:6px 11px;background:rgba(255,255,255,.08);border-radius:20px;max-width:420px;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#9AA;flex:none;}
+.sync-dot.ok{background:#4ADE9A;box-shadow:0 0 0 3px rgba(74,222,154,.25);}
+.sync-dot.busy{background:var(--gold);animation:pulse 1s infinite;}
+.sync-dot.err{background:#FF7A6E;}
+@keyframes pulse{50%{opacity:.35;}}
+.btn{border:0;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .1s,background .15s;white-space:nowrap;}
+.btn:active{transform:scale(.97);}
+.btn svg{width:14px;height:14px;}
+.btn.primary{background:var(--gold);color:#2A1B04;}
+.btn.primary:hover{background:#E4A84E;}
+.btn.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.btn.ghost:hover{background:rgba(255,255,255,.18);}
+.btn.outline{background:#fff;color:var(--navy);border:1px solid var(--line);}
+.btn.outline:hover{border-color:var(--teal);color:var(--teal);}
+.btn.sm{padding:5px 10px;font-size:11px;border-radius:7px;}
+.spin{animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* nav tabs */
+.nav{max-width:1440px;margin:0 auto;padding:0 24px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.nav a{color:rgba(255,255,255,.72);text-decoration:none;font-size:12px;font-weight:600;padding:9px 12px;border-bottom:2px solid transparent;white-space:nowrap;}
+.nav a:hover{color:#fff;}
+.nav a.active{color:#fff;border-bottom-color:var(--gold);}
+
+.wrap{max-width:1440px;margin:0 auto;padding:18px 24px 60px;}
+
+/* ---------- Filter bar ---------- */
+.filter-bar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;box-shadow:var(--shadow);}
+.ff{display:flex;flex-direction:column;gap:4px;min-width:150px;flex:1 1 150px;}
+.ff.date{flex:0 1 145px;min-width:130px;}
+.ff label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);}
+.ff select,.ff input{padding:7px 9px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;background:#fff;color:var(--ink);width:100%;}
+.ff select:focus,.ff input:focus{outline:2px solid rgba(15,127,168,.25);border-color:var(--teal);}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:-6px 0 14px;min-height:0;}
+.chip{background:var(--teal-lt);color:var(--navy);font-size:11px;font-weight:600;padding:4px 6px 4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;}
+.chip button{border:0;background:rgba(11,61,87,.12);color:var(--navy);width:16px;height:16px;border-radius:50%;cursor:pointer;font-size:11px;line-height:1;padding:0;}
+
+/* ---------- KPI ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.kpi .lbl{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px;}
+.kpi .lbl i{width:8px;height:8px;border-radius:2px;background:var(--accent,var(--teal));display:inline-block;}
+.kpi .num{font-size:28px;font-weight:800;color:var(--navy);line-height:1.05;margin-top:8px;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+.kpi .num small{font-size:15px;font-weight:700;color:var(--muted);margin-left:2px;}
+.kpi .sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4;}
+.kpi .sub b{color:var(--ink2);}
+.meter{height:6px;background:var(--line2);border-radius:4px;margin-top:9px;position:relative;overflow:visible;}
+.meter .fill{height:100%;border-radius:4px;background:var(--accent,var(--teal));transition:width .5s;}
+.meter .target{position:absolute;top:-3px;width:2px;height:12px;background:var(--red);border-radius:1px;}
+.kpi .badge{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.badge.good{background:#DDF3E8;color:#1E6B48;}
+.badge.warn{background:var(--orange-lt);color:#8A4E0B;}
+.badge.bad{background:#F8E0DE;color:#93312A;}
+
+/* ---------- Sections ---------- */
+.section{scroll-margin-top:110px;}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:28px 0 12px;flex-wrap:wrap;}
+.section-head h2{font-size:17px;margin:0;color:var(--navy);display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.2px;}
+.section-head h2 .ico{width:28px;height:28px;border-radius:8px;background:var(--teal-lt);display:grid;place-items:center;color:var(--teal);}
+.section-head p{margin:4px 0 0 37px;font-size:12px;color:var(--muted);max-width:780px;line-height:1.5;}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 12px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;}
+.c3{grid-column:span 3;} .c4{grid-column:span 4;} .c5{grid-column:span 5;} .c6{grid-column:span 6;} .c7{grid-column:span 7;} .c8{grid-column:span 8;} .c12{grid-column:span 12;}
+.card h3{font-size:13px;margin:0;color:var(--ink);font-weight:700;}
+.card .note{font-size:11px;color:var(--muted);margin:3px 0 10px;line-height:1.45;}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.cw{position:relative;height:240px;}
+.cw.h200{height:200px;} .cw.h280{height:280px;} .cw.h320{height:320px;} .cw.h360{height:360px;} .cw.h420{height:420px;}
+.empty{font-size:12px;color:var(--muted);text-align:center;padding:40px 10px;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink2);margin-top:8px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.legend i.dot{border-radius:50%;}
+.seg{display:inline-flex;background:var(--line2);border-radius:8px;padding:2px;gap:2px;}
+.seg button{border:0;background:transparent;font-size:11px;font-weight:600;color:var(--muted);padding:4px 9px;border-radius:6px;cursor:pointer;}
+.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+
+/* Insights */
+.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.insight{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 14px;box-shadow:var(--shadow);display:flex;gap:11px;align-items:flex-start;}
+.insight .ic{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:14px;font-weight:800;}
+.insight.good .ic{background:#DDF3E8;color:#1E6B48;}
+.insight.warn .ic{background:var(--orange-lt);color:#8A4E0B;}
+.insight.bad .ic{background:#F8E0DE;color:#93312A;}
+.insight.info .ic{background:var(--teal-lt);color:var(--navy);}
+.insight .tt{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.insight .dd{font-size:11.5px;color:var(--ink2);line-height:1.5;}
+
+/* Map */
+.map-layout{display:grid;grid-template-columns:1fr 300px;gap:12px;}
+#map{width:100%;height:560px;border-radius:10px;overflow:hidden;background:#dfe7ea;}
+.map-controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:12px;}
+.map-controls label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;color:var(--ink2);}
+.map-controls select{padding:5px 8px;border-radius:7px;border:1px solid var(--line);font-size:12px;}
+.hotspot-list{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto;padding-right:2px;}
+.hs{border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;transition:border-color .15s,background .15s;}
+.hs:hover{border-color:var(--teal);background:#F7FBFC;}
+.hs .rk{width:24px;height:24px;border-radius:6px;background:var(--navy);color:#fff;font-weight:800;font-size:11px;display:grid;place-items:center;}
+.hs .nm{font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.25;}
+.hs .ds{font-size:10.5px;color:var(--muted);}
+.hs .vl{font-size:15px;font-weight:800;color:var(--gold-dark);text-align:right;line-height:1;}
+.hs .vl small{display:block;font-size:9.5px;color:var(--muted);font-weight:600;}
+.leaflet-popup-content{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;margin:12px 14px;}
+.pop h4{margin:0 0 4px;font-size:13px;color:var(--navy);}
+.pop .meta{color:var(--muted);font-size:11px;margin-bottom:6px;}
+.pop table{border-collapse:collapse;font-size:11.5px;}
+.pop td{padding:2px 8px 2px 0;}
+.pop td:first-child{color:var(--muted);}
+.map-legend-box{background:#fff;padding:8px 10px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.18);font-size:11px;line-height:1.7;}
+.map-legend-box i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);}
+.map-legend-box .ramp{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:3px 0 2px;width:140px;}
+.map-legend-box .ramp span{flex:1;}
+
+/* Tables */
+.tbl-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.tbl-tools input[type=search]{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;min-width:220px;flex:1;max-width:340px;}
+.tbl-tools .info{font-size:11px;color:var(--muted);margin-left:auto;}
+.tscroll{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:10px;}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;}
+table.dt th{position:sticky;top:0;background:#F6F9FA;color:var(--ink2);font-weight:700;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:11px;cursor:pointer;user-select:none;z-index:1;}
+table.dt th.num,table.dt td.num{text-align:right;font-variant-numeric:tabular-nums;}
+table.dt th .ar{color:var(--teal);margin-left:3px;}
+table.dt td{padding:7px 10px;border-bottom:1px solid var(--line2);white-space:nowrap;}
+table.dt tbody tr:hover{background:#F7FBFC;}
+table.dt tbody tr.click{cursor:pointer;}
+.barcell{display:flex;align-items:center;gap:7px;justify-content:flex-end;}
+.barcell .b{width:64px;height:6px;background:var(--line2);border-radius:3px;overflow:hidden;position:relative;}
+.barcell .b span{display:block;height:100%;border-radius:3px;}
+.barcell .b .tg{position:absolute;left:70%;top:-2px;width:1.5px;height:10px;background:var(--red);}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;}
+.pill.p-hi{background:#F8E0DE;color:#93312A;}
+.pill.p-md{background:var(--orange-lt);color:#8A4E0B;}
+.pill.p-lo{background:#DDF3E8;color:#1E6B48;}
+.flag{display:inline-block;background:#FFF1E0;color:#8A4E0B;font-size:10px;font-weight:600;padding:1px 6px;border-radius:6px;margin:1px 2px 1px 0;}
+.pager{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:10px;font-size:11.5px;color:var(--muted);}
+
+/* Quality */
+.q-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;}
+.q{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .15s;}
+.q:hover,.q.on{border-color:var(--teal);}
+.q.on{background:#F4FAFC;}
+.q .n{font-size:20px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;}
+.q .l{font-size:11px;color:var(--ink2);font-weight:600;line-height:1.3;}
+.q .p{font-size:10.5px;color:var(--muted);}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(8,30,42,.5);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.show{display:flex;}
+.modal{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal h3{margin:0 0 2px;color:var(--navy);font-size:16px;}
+.modal .x{float:right;border:0;background:var(--line2);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;}
+.dl{display:grid;grid-template-columns:200px 1fr;gap:4px 12px;font-size:12px;margin-top:12px;}
+.dl dt{color:var(--muted);} .dl dd{margin:0;font-weight:600;}
+.dl .sep{grid-column:1/-1;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);font-weight:800;margin-top:10px;border-top:1px solid var(--line2);padding-top:8px;}
+
+/* Welcome / overlay */
+.overlay{position:fixed;inset:0;background:rgba(242,245,247,.92);z-index:1500;display:none;align-items:center;justify-content:center;padding:16px;}
+.overlay.show{display:flex;}
+.ov-card{background:#fff;border:1px solid var(--line);border-radius:18px;max-width:560px;padding:26px 28px;box-shadow:0 10px 40px rgba(16,40,52,.12);}
+.ov-card h2{margin:0 0 6px;color:var(--navy);}
+.ov-card p,.ov-card li{font-size:12.5px;color:var(--ink2);line-height:1.6;}
+.ov-card code{background:var(--line2);padding:1px 5px;border-radius:4px;font-size:11.5px;}
+.loader{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--navy);}
+.loader .ring{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--teal);animation:spin .8s linear infinite;}
+
+.methods{font-size:11.5px;color:var(--ink2);line-height:1.65;}
+.methods h4{margin:10px 0 2px;font-size:12px;color:var(--navy);}
+.methods code{display:inline;white-space:normal;background:var(--line2);padding:1px 5px;border-radius:4px;font-size:11px;}
+footer{text-align:center;font-size:11px;color:var(--muted);padding:20px;}
+
+@media (max-width:1180px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .c3,.c4,.c5{grid-column:span 6;} .c7,.c8{grid-column:span 12;} .c6{grid-column:span 12;}
+  .insights{grid-template-columns:repeat(2,1fr);}
+  .map-layout{grid-template-columns:1fr;}
+  .hotspot-list{max-height:none;display:grid;grid-template-columns:repeat(2,1fr);}
+  .q-grid{grid-template-columns:repeat(3,1fr);}
+}
+@media (max-width:720px){
+  .wrap{padding:14px 16px 40px;} .topbar-inner,.nav{padding-left:16px;padding-right:16px;}
+  .topbar{position:relative;} .top-actions .btn span{display:none;} .section{scroll-margin-top:10px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px;} .kpi .num{font-size:22px;}
+  .grid > .card{grid-column:span 12;}
+  .insights{grid-template-columns:1fr;}
+  .hotspot-list{grid-template-columns:1fr;}
+  .q-grid{grid-template-columns:1fr 1fr;}
+  #map{height:420px;}
+  .sync-status{max-width:100%;}
+  .dl{grid-template-columns:1fr;}
+  .section-head p{margin-left:0;}
+}
+@media print{.topbar,.filter-bar,.tbl-tools,.pager{display:none;} .card,.kpi{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2a2 2 0 1 0-3.9.6M17.9 5.8A2 2 0 1 0 14 5.2"/><path d="M4.4 10.5a2 2 0 1 0 2.2 3.3M17.4 13.8a2 2 0 1 0 2.2-3.3"/><path d="M12 11c-2.8 0-5 3-5 5.5 0 1.9 1.4 3 3 3 .9 0 1.4-.5 2-.5s1.1.5 2 .5c1.6 0 3-1.1 3-3C17 14 14.8 11 12 11z"/></svg></div>
+      <div><div class="t1">RaCon Analytics</div><div class="t2">Dashboard Pendataan Hewan Penular Rabies</div></div>
+    </div>
+    <div class="top-actions">
+      <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Menyiapkan…</span></div>
+      <button class="btn primary" id="btn-refresh" title="Ambil data terbaru dari Google Spreadsheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg><span>Sinkron</span></button>
+    </div>
+  </div>
+  <nav class="nav" id="nav">
+    <a href="#s-ringkasan" class="active">Ringkasan</a>
+    <a href="#s-peta">Peta &amp; Hotspot</a>
+    <a href="#s-vaksin">Vaksinasi &amp; Risiko</a>
+    <a href="#s-populasi">Populasi</a>
+    <a href="#s-steril">Sterilisasi &amp; Pemeliharaan</a>
+    <a href="#s-ternak">Ternak</a>
+    <a href="#s-aktivitas">Aktivitas Pendataan</a>
+    <a href="#s-kualitas">Kualitas Data</a>
+    <a href="#s-banjar">Rekap Banjar</a>
+    <a href="#s-data">Data Mentah</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <!-- FILTER -->
+  <div class="filter-bar">
+    <div class="ff"><label for="f-kec">Kecamatan</label><select id="f-kec"></select></div>
+    <div class="ff"><label for="f-desa">Desa / Kelurahan</label><select id="f-desa"></select></div>
+    <div class="ff"><label for="f-banjar">Banjar / Lingkungan</label><select id="f-banjar"></select></div>
+    <div class="ff"><label for="f-pendata">Pendata</label><select id="f-pendata"></select></div>
+    <div class="ff date"><label for="f-from">Dari tanggal</label><input type="date" id="f-from"></div>
+    <div class="ff date"><label for="f-to">Sampai tanggal</label><input type="date" id="f-to"></div>
+    <button class="btn outline" id="btn-reset">Reset filter</button>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <!-- RINGKASAN -->
+  <section class="section" id="s-ringkasan">
+    <div class="kpi-grid" id="kpis"></div>
+    <div class="section-head" style="margin-top:20px;"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg></span>Temuan Utama</h2><p>Ringkasan otomatis yang dihitung ulang setiap kali data atau filter berubah.</p></div></div>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <!-- PETA -->
+  <section class="section" id="s-peta">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3zM9 3v15M15 6v15"/></svg></span>Peta Sebaran &amp; Hotspot Risiko</h2><p>Setiap titik adalah satu rumah tangga, diberi warna menurut status vaksinasi anjingnya. Lapisan <b>heatmap</b> dan <b>grid hotspot</b> (sel ±220 m) menunjukkan di mana indikator terpilih terkonsentrasi; daftar di kanan mengurutkan sel prioritas.</p></div></div>
+    <div class="card">
+      <div class="map-controls">
+        <label><input type="checkbox" id="ly-points" checked> Titik rumah tangga</label>
+        <label><input type="checkbox" id="ly-heat"> Heatmap</label>
+        <label><input type="checkbox" id="ly-grid" checked> Grid hotspot</label>
+        <label style="margin-left:auto;">Indikator:
+          <select id="map-metric">
+            <option value="roamUnvax">Estimasi anjing berkeliaran belum vaksin</option>
+            <option value="dogUnvax">Anjing belum vaksin</option>
+            <option value="dogRoam">Anjing berkeliaran</option>
+            <option value="dogNeedSter">Anjing butuh sterilisasi</option>
+            <option value="dogs">Total anjing</option>
+            <option value="cats">Total kucing</option>
+            <option value="catUnvax">Kucing belum vaksin</option>
+            <option value="kk">Jumlah rumah tangga</option>
+          </select>
+        </label>
+      </div>
+      <div class="map-layout">
+        <div><div id="map"></div><div class="note" id="map-note" style="font-size:11px;color:var(--muted);margin-top:8px;"></div></div>
+        <div>
+          <h3 style="font-size:13px;margin:0 0 2px;">10 Sel Hotspot Teratas</h3>
+          <div class="note" style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="hs-note">Klik untuk memperbesar peta ke lokasi.</div>
+          <div class="hotspot-list" id="hotspots"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VAKSINASI -->
+  <section class="section" id="s-vaksin">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m18 2 4 4M17 7l3-3M19 9 8.7 19.3a2.4 2.4 0 0 1-3.4 0l-.6-.6a2.4 2.4 0 0 1 0-3.4L15 5M9 11l4 4M5 19l-3 3"/></svg></span>Vaksinasi &amp; Risiko Rabies</h2><p>Target cakupan vaksinasi anjing minimal <b>70%</b> (rekomendasi WHO untuk memutus penularan rabies). Garis merah putus-putus pada grafik menandai target tersebut.</p></div></div>
+    <div class="grid">
+      <div class="card c6"><h3>Cakupan Vaksinasi Anjing per Desa</h3><div class="note">Persentase anjing yang sudah divaksin tahun ini. Klik batang untuk memfilter desa.</div><div class="cw h280"><canvas id="ch-cov-desa"></canvas></div></div>
+      <div class="card c6"><h3>Status Vaksinasi Anjing per Desa (ekor)</h3><div class="note">Jumlah absolut — menunjukkan berapa anjing yang masih perlu divaksin.</div><div class="cw h280"><canvas id="ch-vax-desa"></canvas></div>
+        <div class="legend"><span><i style="background:#0F7FA8"></i>Sudah vaksin</span><span><i style="background:#D98A2B"></i>Belum vaksin</span></div></div>
+      <div class="card c7"><div class="card-head"><div><h3>Matriks Risiko per Banjar</h3><div class="note">Sumbu X = cakupan vaksin anjing, sumbu Y = % anjing berkeliaran, ukuran gelembung = jumlah anjing. Kuadran kiri-atas adalah prioritas tertinggi. Hanya banjar dengan ≥5 anjing.</div></div></div><div class="cw h360"><canvas id="ch-risk"></canvas></div><div class="legend" id="risk-legend"></div></div>
+      <div class="card c5"><h3>Banjar Prioritas Intervensi</h3><div class="note">Diurutkan menurut Skor Prioritas (lihat Metodologi). Min. 5 anjing.</div><div class="tscroll" style="max-height:392px;"><table class="dt" id="tb-priority"></table></div></div>
+      <div class="card c4"><h3>Status Vaksinasi Kucing</h3><div class="note">Kucing juga hewan penular rabies (HPR).</div><div class="cw h200"><canvas id="ch-cat-vax"></canvas></div></div>
+      <div class="card c4"><h3>Kesenjangan Menuju Target 70%</h3><div class="note">Jumlah anjing tambahan yang perlu divaksin agar tiap desa mencapai 70%.</div><div class="cw h200"><canvas id="ch-gap"></canvas></div></div>
+      <div class="card c4"><h3>Profil Vaksinasi Rumah Tangga</h3><div class="note">Rumah tangga pemilik anjing menurut kelengkapan vaksinasi anjingnya.</div><div class="cw h200"><canvas id="ch-hh-vax"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- POPULASI -->
+  <section class="section" id="s-populasi">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/></svg></span>Populasi &amp; Demografi HPR</h2><p>Struktur kepemilikan hewan penular rabies, rasio jenis kelamin, dan kepadatan per rumah tangga.</p></div></div>
+    <div class="grid">
+      <div class="card c8"><h3>Populasi Anjing &amp; Kucing per Desa</h3><div class="note">Jumlah ekor tercatat.</div><div class="cw h280"><canvas id="ch-pop-desa"></canvas></div><div class="legend"><span><i style="background:#0F7FA8"></i>Anjing</span><span><i style="background:#7A5BA6"></i>Kucing</span></div></div>
+      <div class="card c4"><h3>Komposisi Kepemilikan HPR</h3><div class="note">Rumah tangga menurut jenis HPR yang dipelihara.</div><div class="cw h280"><canvas id="ch-own"></canvas></div></div>
+      <div class="card c6"><h3>Distribusi Jumlah Anjing per Rumah Tangga</h3><div class="note">Rumah tangga dengan banyak anjing biasanya berkontribusi besar terhadap populasi berkeliaran.</div><div class="cw"><canvas id="ch-dog-hist"></canvas></div></div>
+      <div class="card c6"><h3>Komposisi Jenis Kelamin</h3><div class="note">Proporsi jantan vs betina. Betina yang belum steril menentukan potensi pertambahan populasi.</div><div class="cw"><canvas id="ch-sex"></canvas></div><div class="legend"><span><i style="background:#4E6ED0"></i>Jantan</span><span><i style="background:#C9506B"></i>Betina</span><span><i style="background:#C3CDD2"></i>Tidak sesuai total</span></div></div>
+      <div class="card c12"><h3>Kepadatan HPR per Banjar (Top 20)</h3><div class="note">Banjar dengan jumlah anjing terbanyak, beserta rata-rata anjing per rumah tangga.</div><div class="cw h320"><canvas id="ch-banjar-top"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- STERIL -->
+  <section class="section" id="s-steril">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-7h6v7"/></svg></span>Sterilisasi &amp; Cara Pemeliharaan</h2><p>Anjing yang dilepas berkeliaran lebih berisiko tertular dan menularkan rabies; sterilisasi mengendalikan pertumbuhan populasi.</p></div></div>
+    <div class="grid">
+      <div class="card c6"><h3>Status Sterilisasi</h3><div class="note">"Tidak terkategori" = selisih total dengan (sudah steril + butuh steril), mis. anak anjing atau tidak dijawab.</div><div class="cw h200"><canvas id="ch-ster"></canvas></div><div class="legend"><span><i style="background:#0F7FA8"></i>Sudah steril</span><span><i style="background:#D98A2B"></i>Butuh sterilisasi</span><span><i style="background:#C3CDD2"></i>Tidak terkategori</span></div></div>
+      <div class="card c6"><h3>Cara Pemeliharaan</h3><div class="note">Dipelihara di dalam rumah/terkandang vs dibiarkan berkeliaran.</div><div class="cw h200"><canvas id="ch-keep"></canvas></div><div class="legend"><span><i style="background:#0F7FA8"></i>Di dalam rumah</span><span><i style="background:#D98A2B"></i>Berkeliaran</span><span><i style="background:#C3CDD2"></i>Tidak sesuai total</span></div></div>
+      <div class="card c6"><h3>Sterilisasi &amp; Pemeliharaan Anjing per Desa</h3><div class="note">% anjing sudah steril dan % anjing berkeliaran di tiap desa.</div><div class="cw h280"><canvas id="ch-ster-desa"></canvas></div><div class="legend"><span><i style="background:#0F7FA8"></i>% sudah steril</span><span><i style="background:#D98A2B"></i>% berkeliaran</span></div></div>
+      <div class="card c6"><h3>Analisis Silang: Pemeliharaan × Vaksinasi × Sterilisasi</h3><div class="note">Cakupan vaksin &amp; steril anjing pada rumah tangga yang melepas anjingnya vs yang tidak.</div><div class="cw h280"><canvas id="ch-cross"></canvas></div><div class="legend"><span><i style="background:#0F7FA8"></i>Cakupan vaksin</span><span><i style="background:#2E9E6B"></i>Cakupan steril</span></div></div>
+    </div>
+  </section>
+
+  <!-- TERNAK -->
+  <section class="section" id="s-ternak">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10l8-6 8 6v10M9 20v-5h6v5"/></svg></span>Kepemilikan Ternak</h2><p>Informasi pendukung untuk perencanaan One Health (rabies juga dapat menular ke ternak).</p></div></div>
+    <div class="grid">
+      <div class="card c5"><h3>Rumah Tangga Pemilik Ternak</h3><div class="note">Satu rumah tangga dapat memelihara lebih dari satu jenis.</div><div class="cw"><canvas id="ch-ternak"></canvas></div></div>
+      <div class="card c7"><h3>Ringkasan Ternak</h3><div class="note">Median lebih tahan terhadap nilai ekstrem (mis. peternakan ayam besar) dibanding rata-rata.</div><div class="tscroll"><table class="dt" id="tb-ternak"></table></div></div>
+    </div>
+  </section>
+
+  <!-- AKTIVITAS -->
+  <section class="section" id="s-aktivitas">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>Aktivitas Pendataan</h2><p>Progres pengumpulan data, pola waktu kerja, dan kinerja pendata.</p></div></div>
+    <div class="grid">
+      <div class="card c8"><div class="card-head"><div><h3>Progres Pendataan</h3><div class="note" id="trend-note">Rumah tangga terdata per tanggal kunjungan.</div></div><div class="seg" id="seg-trend"><button class="on" data-v="daily">Harian</button><button data-v="cum">Kumulatif</button></div></div><div class="cw h280"><canvas id="ch-trend"></canvas></div></div>
+      <div class="card c4"><h3>Jam Pengisian Form</h3><div class="note">Berdasarkan waktu mulai pengisian.</div><div class="cw h280"><canvas id="ch-hour"></canvas></div></div>
+      <div class="card c5"><h3>15 Pendata Teraktif</h3><div class="note">Jumlah rumah tangga yang didata.</div><div class="cw h360"><canvas id="ch-enum"></canvas></div></div>
+      <div class="card c7"><h3>Kinerja Pendata</h3><div class="note">Klik judul kolom untuk mengurutkan. Presisi GPS baik = ≤ 50 m.</div><div class="tscroll" style="max-height:376px;"><table class="dt" id="tb-enum"></table></div></div>
+    </div>
+  </section>
+
+  <!-- KUALITAS -->
+  <section class="section" id="s-kualitas">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>Kualitas Data</h2><p>Pemeriksaan otomatis untuk membantu verifikasi lapangan. Klik kartu untuk menampilkan catatan yang terkena aturan tersebut.</p></div></div>
+    <div class="q-grid" id="q-grid"></div>
+    <div class="card"><div class="tbl-tools"><b style="font-size:12.5px;" id="q-title">Catatan yang perlu diverifikasi</b><span class="info" id="q-info"></span><button class="btn outline sm" id="q-export">Unduh CSV</button></div><div class="tscroll" style="max-height:380px;"><table class="dt" id="tb-quality"></table></div><div class="pager" id="q-pager"></div></div>
+  </section>
+
+  <!-- BANJAR -->
+  <section class="section" id="s-banjar">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18"/></svg></span>Rekap per Banjar / Lingkungan</h2><p>Nama banjar dinormalisasi (huruf besar/kecil, spasi, tanda baca, awalan "Br.", serta ejaan th/t, dh/d) agar variasi penulisan seperti "Jaba Pura"/"Jabapura" dan "Kertha"/"Kerta" digabung.</p></div></div>
+    <div class="card"><div class="tbl-tools"><input type="search" id="bj-search" placeholder="Cari banjar / desa…"><span class="info" id="bj-info"></span><button class="btn outline sm" id="bj-export">Unduh CSV</button></div><div class="tscroll"><table class="dt" id="tb-banjar"></table></div></div>
+  </section>
+
+  <!-- DATA -->
+  <section class="section" id="s-data">
+    <div class="section-head"><div><h2><span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></svg></span>Data Mentah</h2><p>Seluruh catatan sesuai filter. Klik baris untuk melihat detail.</p></div></div>
+    <div class="card"><div class="tbl-tools"><input type="search" id="raw-search" placeholder="Cari nama KK, banjar, pendata…"><span class="info" id="raw-info"></span><button class="btn outline sm" id="raw-export">Unduh CSV</button></div><div class="tscroll"><table class="dt" id="tb-raw"></table></div><div class="pager" id="raw-pager"></div></div>
+  </section>
+
+  <!-- METODOLOGI -->
+  <section class="section" id="s-metode">
+    <div class="section-head"><div><h2><span class="ico">i</span>Metodologi &amp; Definisi</h2></div></div>
+    <div class="card methods">
+      <h4>Cakupan vaksinasi</h4>Σ anjing sudah vaksin tahun ini ÷ (Σ sudah vaksin + Σ belum vaksin). Penyebut memakai jumlah yang dijawab, bukan total, agar tidak bias saat jawaban tidak lengkap. Target 70% mengacu pada rekomendasi WHO untuk eliminasi rabies pada anjing.
+      <h4>Estimasi anjing berkeliaran belum vaksin</h4>Form tidak menanyakan kombinasi status secara langsung, sehingga dihitung per rumah tangga sebagai <code>berkeliaran × belum vaksin ÷ total anjing</code> (asumsi status vaksin dan cara pemeliharaan saling bebas di dalam satu rumah tangga), dibatasi tidak melebihi nilai terkecil keduanya. Indikator ini dipakai untuk hotspot karena menggabungkan peluang kontak dan kerentanan.
+      <h4>Skor Prioritas banjar (0–100)</h4><code>100 × [0,5 × (1 − cakupan vaksin) + 0,3 × proporsi berkeliaran + 0,2 × proporsi butuh steril]</code>. Kategori: ≥ 50 tinggi, 35–49 sedang, &lt; 35 rendah. Bobot dapat disesuaikan pada konstanta <code>PRIORITY_WEIGHTS</code> di kode.
+      <h4>Grid hotspot</h4>Titik GPS dikelompokkan ke sel berukuran 0,002° (± 220 m × 220 m) dan nilai indikator dijumlahkan per sel. Titik dengan presisi GPS &gt; 50 m tetap dipetakan namun ditandai di Kualitas Data.
+      <h4>Aturan kualitas data</h4>GPS kosong; presisi &gt; 50 m; titik &gt; 4 km dari median lokasi desanya; jantan + betina ≠ total; sudah + belum vaksin ≠ total; berkeliaran + dalam rumah ≠ total; steril + butuh steril &gt; total; HPR dipilih tetapi jumlahnya 0/kosong; nama KK + banjar sama dan lokasinya ≤ 30 m (kemungkinan duplikat, catatan pertama tidak ditandai); durasi pengisian &lt; 1 atau &gt; 60 menit.
+      <h4>Sumber data</h4><span id="src-info">—</span>
+    </div>
+  </section>
+</main>
+<footer>RaCon Analytics · Data bersumber dari Google Spreadsheet Pendataan Hewan · <span id="foot-time"></span></footer>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal"><div class="modal" id="modal-body"></div></div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay"><div class="ov-card" id="ov-card"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+/* =========================================================================
+   KONFIGURASI — ubah bagian ini saja
+   ========================================================================= */
+const CONFIG = {
+  // Endpoint Web App sudah tertanam (tersandi) di fungsi endpoint() di bawah.
+  // Isi jika CONFIG.API_KEY di Code.gs diisi.
+  API_KEY: '',
+  // Nama sheet (harus terdaftar di ALLOWED_SHEETS pada Code.gs).
+  SHEET_NAME: 'Pendataan Hewan',
+  // Sinkronisasi otomatis tiap N menit (0 = mati).
+  AUTO_REFRESH_MIN: 5,
+  // Target cakupan vaksinasi (%).
+  VACC_TARGET: 70,
+  // Batas presisi GPS yang dianggap baik (meter).
+  GPS_PRECISION_OK: 50
+};
+// Endpoint data (disandikan agar tidak tampil sebagai teks biasa di kode sumber)
+const _k=['RPNzNnNTNCNE85Z3liY3lmS0Evcy9zb3JjYW0vb','Y2V4ZS9VOWh2eWhaYzVfUVRfT3FIZ3BDSENlVEV','W9jLmVsZ29vZy50cGlyY3MvLzpzcHR0aA==','ydWVUYlhkTGhWS1FTczFUZmJ6LUZ2NFh2Nm12V3'], _o=[2,0,3,1];
+function endpoint(){ const p=[]; _o.forEach((pos,i)=>p[pos]=_k[i]); return atob(p.join('')).split('').reverse().join(''); }
+const PRIORITY_WEIGHTS = { unvax: 0.5, roam: 0.3, needSter: 0.2 };
+const GPS_FAR_M = 4000;     // titik > 4 km dari median desanya dianggap salah lokasi
+const DUP_RADIUS_M = 30;   // jarak maksimum dua catatan bernama sama untuk dianggap duplikat
+
+/* =========================================================================
+   WARNA (palet tervalidasi untuk buta warna; urutan tetap)
+   ========================================================================= */
+const COL = {
+  good:'#0F7FA8', need:'#D98A2B', unk:'#C3CDD2', dog:'#0F7FA8', cat:'#7A5BA6',
+  male:'#4E6ED0', female:'#C9506B', green:'#2E9E6B', red:'#C1453D', navy:'#0B3D57',
+  grid:'#EDF1F3', ink:'#3C4E57', muted:'#6B7C84'
+};
+const CAT = ['#0F7FA8','#D98A2B','#2E9E6B','#7A5BA6','#C9506B','#4E6ED0'];
+const SEQ = ['#FCEBD3','#F6C98C','#EBA04E','#CC7422','#934C0F'];
+const HH_STATUS = {
+  all:{label:'Semua anjing sudah vaksin', color:'#2E9E6B'},
+  partial:{label:'Sebagian anjing sudah vaksin', color:'#D98A2B'},
+  none:{label:'Belum ada anjing yang divaksin', color:'#C1453D'},
+  cat:{label:'Hanya memelihara kucing', color:'#7A5BA6'},
+  nohpr:{label:'Tanpa HPR / jumlah 0', color:'#9AA9B0'}
+};
+const METRICS = {
+  roamUnvax:{label:'Est. anjing berkeliaran belum vaksin', short:'est. liar blm vaksin', get:p=>p.roamUnvax},
+  dogUnvax:{label:'Anjing belum vaksin', short:'anjing blm vaksin', get:p=>p.d.u},
+  dogRoam:{label:'Anjing berkeliaran', short:'anjing berkeliaran', get:p=>p.d.r},
+  dogNeedSter:{label:'Anjing butuh sterilisasi', short:'butuh steril', get:p=>p.d.n},
+  dogs:{label:'Total anjing', short:'anjing', get:p=>p.d.t},
+  cats:{label:'Total kucing', short:'kucing', get:p=>p.c.t},
+  catUnvax:{label:'Kucing belum vaksin', short:'kucing blm vaksin', get:p=>p.c.u},
+  kk:{label:'Rumah tangga', short:'KK', get:p=>1}
+};
+
+/* =========================================================================
+   UTIL
+   ========================================================================= */
+const $ = id => document.getElementById(id);
+const nf = new Intl.NumberFormat('id-ID');
+const fmt = (n, d=0) => (n==null||isNaN(n)) ? '–' : new Intl.NumberFormat('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
+const pct = (a,b,d=1) => b>0 ? a/b*100 : null;
+const fmtPct = (v,d=1) => v==null ? '–' : fmt(v,d)+'%';
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const normKey = s => String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const titleCase = s => String(s||'').replace(/_/g,' ').toLowerCase().replace(/\b\w/g, c=>c.toUpperCase()).trim();
+const sum = (arr, f) => arr.reduce((a,x)=>a+(f(x)||0),0);
+const median = arr => { if(!arr.length) return null; const s=[...arr].sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const fmtDate = d => d ? d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear() : '–';
+const fmtDateShort = d => d ? d.getDate()+' '+MONTHS[d.getMonth()] : '–';
+const dkey = d => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
+function num(v){ if(v==null||v==='') return null; if(typeof v==='number') return isFinite(v)?v:null; const n=parseFloat(String(v).replace(',','.')); return isFinite(n)?n:null; }
+function parseDate(v){
+  if(v==null||v==='') return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  if(typeof v==='number'){ // Excel serial
+    if(v>20000 && v<80000){ const ms=Math.round((v-25569)*86400000); const d=new Date(ms); return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds()); }
+    return null;
+  }
+  const s=String(v).trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m){
+    if(/[+-]\d{2}:?\d{2}$|Z$/.test(s) && m[4]!=null){ const d=new Date(s); if(!isNaN(d)) return d; }
+    return new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  }
+  m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m) return new Date(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  const d=new Date(s); return isNaN(d)?null:d;
+}
+function haversine(a1,o1,a2,o2){ const R=6371000, t=Math.PI/180; const da=(a2-a1)*t, dn=(o2-o1)*t; const x=Math.sin(da/2)**2+Math.cos(a1*t)*Math.cos(a2*t)*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(x)); }
+function downloadCSV(name, header, rows){
+  const q=v=>{ const s=v==null?'':String(v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  const csv='﻿'+[header.map(q).join(',')].concat(rows.map(r=>r.map(q).join(','))).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+let RAW = [];          // data ternormalisasi
+let VIEW = [];         // data setelah filter
+let SOURCE = {type:null, label:'', meta:null};
+const F = {kec:'', desa:'', banjar:'', pendata:'', from:'', to:''};
+const CH = {};
+let trendMode = 'daily', qRule = '', qPage = 0, rawPage = 0;
+const SORT = { banjar:{k:'score',d:-1}, enum:{k:'kk',d:-1}, raw:{k:'date',d:-1}, prio:{k:'score',d:-1} };
+
+/* =========================================================================
+   NORMALISASI BARIS
+   ========================================================================= */
+// Nama pendata: ambil NIM/ID angka di awal (mis. "2309 511 042 ..." → "2309511042"), selain itu rapikan & potong.
+function cleanPendata(v){
+  let t=String(v==null?'':v).replace(/\s+/g,' ').trim();
+  if(!t) return '(tanpa nama)';
+  const m=t.match(/^(\d[\d\s.-]{2,16}\d)(?!\d)/); if(m){ const id=m[1].replace(/\D/g,''); if(id.length>=3) return id; }
+  return t.length>40 ? t.slice(0,38)+'…' : t;
+}
+function makeGetter(r){ // r = objek dengan kunci ternormalisasi
+  return function(){ for(const n of arguments){ const v=r[normKey(n)]; if(v!==undefined && v!==null && v!=='') return v; } return null; };
+}
+function animal(get, sp){
+  const A = sp==='d' ? {
+    t:['Jumlah_Total_Anjing_yang_dipelihara'], m:['Jumlah_anjing_jantan'], f:['Jumlah_anjing_betina'],
+    v:['Jumlah_anjing_yang_S_sin_rabies_tahun_ini','Jumlah_anjing_yang_SUDAH_vaksin_rabies_tahun_ini'],
+    u:['Jumlah_anjing_yang_B_sin_rabies_tahun_ini','Jumlah_anjing_yang_BELUM_vaksin_rabies_tahun_ini'],
+    s:['Jumlah_anjing_yang_SUDAH_disteril'], n:['Jumlah_anjing_yang_M_BUTUHKAN_sterilisasi','Jumlah_anjing_yang_MEMBUTUHKAN_sterilisasi'],
+    r:['Jumlah_anjing_yang_dibiarkan_berkeliaran'], h:['Jumlah_anjing_yang_d_lihara_didalam_rumah','Jumlah_anjing_yang_dipelihara_didalam_rumah']
+  } : {
+    t:['Jumlah_total_kucing_yang_dipelihara'], m:['Jumlah_kucing_jantan'], f:['Jumlah_kucing_betina'],
+    v:['Jumlah_kucing_yang_S_sin_rabies_tahun_ini','Jumlah_kucing_yang_SUDAH_vaksin_rabies_tahun_ini'],
+    u:['Jumlah_kucing_yang_B_sin_rabies_tahun_ini','Jumlah_kucing_yang_BELUM_vaksin_rabies_tahun_ini'],
+    s:['Jumlah_kucing_yang_sudah_disteril'], n:['Jumlah_kucing_yang_M_BUTUHKAN_sterilisasi','Jumlah_kucing_yang_MEMBUTUHKAN_sterilisasi'],
+    r:['Jumlah_kucing_yang_dibiarkan_berkeliaran'], h:['Jumlah_kucing_yang_d_lihara_didalam_rumah','Jumlah_kucing_yang_dipelihara_didalam_rumah']
+  };
+  const o={answered:false};
+  for(const k in A){ const v=num(get.apply(null,A[k])); if(v!=null) o.answered=true; o[k]=v==null?0:Math.max(0,v); }
+  return o;
+}
+const TERNAK = ['sapi','babi','kambing','ayam','itik'];
+
+function normalizeRows(objs){
+  const out=[];
+  objs.forEach((src,i)=>{
+    const r={}; for(const k in src) r[normKey(k)] = src[k];
+    const get=makeGetter(r);
+    const start=parseDate(get('start')), end=parseDate(get('end'));
+    let date=parseDate(get('Tanggal_kunjungan','Tanggal_Pencatatan')) || start || parseDate(get('_submission_time'));
+    if(date) date=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+    let lat=num(get('_Klik_lokasi_anda_GPS_latitude','_Lokasi_GPS_latitude')), lng=num(get('_Klik_lokasi_anda_GPS_longitude','_Lokasi_GPS_longitude'));
+    let prec=num(get('_Klik_lokasi_anda_GPS_precision','_Lokasi_GPS_precision'));
+    if(lat==null||lng==null){ const g=get('Klik_lokasi_anda_GPS','Lokasi_GPS'); if(g){ const p=String(g).trim().split(/[\s,]+/).map(parseFloat); if(isFinite(p[0])&&isFinite(p[1])){lat=p[0];lng=p[1]; if(prec==null&&isFinite(p[3])) prec=p[3];} } }
+    if(lat!=null && (Math.abs(lat)>90||Math.abs(lng)>180||(lat===0&&lng===0))){lat=null;lng=null;}
+    const kecRaw=String(get('Kecamatan')||'').trim();
+    const kec=normKey(kecRaw)||'tidakdiketahui';
+    // desa: kolom Pilih_Desa_Kelurahan_di_<kecamatan>, atau kolom desa lain yang terisi
+    let desaRaw = r['pilihdesakelurahandi'+kec];
+    if(desaRaw==null||desaRaw===''){ for(const k in r){ if(k.indexOf('pilihdesakelurahandi')===0 && r[k]!=null && r[k]!==''){ desaRaw=r[k]; break; } } }
+    if(desaRaw==null||desaRaw==='') desaRaw=get('Desa','Desa_Kelurahan','Kelurahan');
+    desaRaw=String(desaRaw||'').trim();
+    const desa=normKey(desaRaw)||'tidakdiketahui';
+    const banjarRaw=String(get('Banjar_Lingkungan','Banjar')||'').trim();
+    const banjarClean=banjarRaw.replace(/^(br|banjar|bjr|lingk|lingkungan|link)\.?\s*(?=\S)/i,'').trim();
+    const banjarKey=normKey(banjarClean).replace(/([bcdgjkpt])h/g,'$1').replace(/oe/g,'u').replace(/(.)\1+/g,'$1')||'tidakdiketahui';
+    const jenis=String(get('Jenis_Hewan_Penular_Rabies_HP')||'').toLowerCase();
+    const d=animal(get,'d'), c=animal(get,'c');
+    const hasDogSel = /anjing/.test(jenis) || num(get('Jenis_Hewan_Penular_Rabies_HP/anjing'))===1;
+    const hasCatSel = /kucing/.test(jenis) || num(get('Jenis_Hewan_Penular_Rabies_HP/kucing'))===1;
+    const ternakStr=String(get('Jenis_ternak_yang_dipelihara')||'').toLowerCase();
+    const ternak={};
+    TERNAK.forEach(t=>{ const sel = new RegExp('\\b'+t+'\\b').test(ternakStr) || num(get('Jenis_ternak_yang_dipelihara/'+t))===1; const n=num(get('Jumlah_'+t+'_yang_dipelihara')); if(sel || (n!=null&&n>0)) ternak[t]=n==null?0:n; });
+    const dur = (start&&end) ? (end-start)/60000 : null;
+    const roamUnvax = d.t>0 ? Math.min(d.r, d.u, d.r*d.u/d.t) : 0;
+    let hh='nohpr';
+    if(d.t>0){ const den=d.v+d.u; hh = d.v>=d.t || (den>0 && d.u===0) ? 'all' : d.v===0 ? 'none' : 'partial'; }
+    else if(c.t>0) hh='cat';
+    out.push({
+      i, id:get('_id')||get('_index')||(i+1), date, start, dur, hour:start?start.getHours():null,
+      pendata:cleanPendata(get('Nama_Pendata')), kk:String(get('Nama_Penduduk_kepala_keluarga','Nama_Pemilik_Hewan')||'').trim(),
+      perum:String(get('Nama_Perumahan_jika_ada')||'').trim(),
+      lat, lng, prec, kec, kecLabel:titleCase(kecRaw)||'Tidak diketahui', desa:kec+'|'+desa, desaLabel:titleCase(desaRaw)||'Tidak diketahui',
+      banjarRaw:banjarClean, banjarId:kec+'|'+desa+'|'+banjarKey, banjarLabel:'',
+      hasDogSel, hasCatSel, d, c, ternak, ternakNone:/tidak_memelihara/.test(ternakStr), roamUnvax, hh, flags:[],
+      sub:parseDate(get('_submission_time'))
+    });
+  });
+  // label banjar = varian penulisan terbanyak
+  const variants={};
+  out.forEach(p=>{ const v=variants[p.banjarId]||(variants[p.banjarId]={}); const lbl=titleCase(p.banjarRaw)||'Tidak diketahui'; v[lbl]=(v[lbl]||0)+1; });
+  const best={}; for(const k in variants){ best[k]=Object.entries(variants[k]).sort((a,b)=>b[1]-a[1])[0][0]; }
+  out.forEach(p=>p.banjarLabel=best[p.banjarId]);
+  computeQuality(out);
+  return out;
+}
+
+/* =========================================================================
+   KUALITAS DATA
+   ========================================================================= */
+const QRULES = {
+  gps_missing:'GPS tidak ada', gps_prec:'Presisi GPS > 50 m', gps_far:'GPS > 4 km dari desanya',
+  sum_sex:'Jantan+betina ≠ total', sum_vax:'Vaksin sudah+belum ≠ total', sum_keep:'Liar+di rumah ≠ total',
+  sum_ster:'Steril+butuh steril > total', zero:'HPR dipilih, jumlah 0', dup:'Kemungkinan duplikat', dur:'Durasi isi tidak wajar'
+};
+function computeQuality(rows){
+  // median lokasi per kecamatan
+  const byDesa={};
+  rows.forEach(p=>{ if(p.lat!=null){ (byDesa[p.desa]=byDesa[p.desa]||{a:[],o:[]}); byDesa[p.desa].a.push(p.lat); byDesa[p.desa].o.push(p.lng);} });
+  const cen={}; for(const k in byDesa) if(byDesa[k].a.length>=5) cen[k]=[median(byDesa[k].a),median(byDesa[k].o)];
+  const seen={};
+  rows.forEach(p=>{
+    const f=[];
+    if(p.lat==null) f.push('gps_missing');
+    else{
+      if(p.prec!=null && p.prec>CONFIG.GPS_PRECISION_OK) f.push('gps_prec');
+      const c=cen[p.desa]; if(c && haversine(p.lat,p.lng,c[0],c[1])>GPS_FAR_M) f.push('gps_far');
+    }
+    const chk=(a)=>{ if(!a.answered||a.t===0) return {}; return {sex:a.m+a.f!==a.t, vax:a.v+a.u!==a.t, keep:a.r+a.h!==a.t, ster:a.s+a.n>a.t}; };
+    const cd=chk(p.d), cc=chk(p.c);
+    if(cd.sex||cc.sex) f.push('sum_sex'); if(cd.vax||cc.vax) f.push('sum_vax'); if(cd.keep||cc.keep) f.push('sum_keep'); if(cd.ster||cc.ster) f.push('sum_ster');
+    if((p.hasDogSel && p.d.t===0) || (p.hasCatSel && p.c.t===0)) f.push('zero');
+    // duplikat: nama KK & banjar sama DAN lokasi berdekatan (≤ DUP_RADIUS_M) atau salah satu tanpa GPS
+    if(p.kk && normKey(p.kk).length>1){ const k=normKey(p.kk)+'|'+p.banjarId; const prev=seen[k]||(seen[k]=[]);
+      if(prev.some(q=>q.lat==null||p.lat==null||haversine(p.lat,p.lng,q.lat,q.lng)<=DUP_RADIUS_M)) f.push('dup'); prev.push(p); }
+    if(p.dur!=null && (p.dur<1 || p.dur>60)) f.push('dur');
+    p.flags=f;
+  });
+}
+
+/* =========================================================================
+   AGREGASI
+   ========================================================================= */
+function agg(rows){
+  const a={kk:rows.length, dogHH:0, catHH:0, bothHH:0, dogOnly:0, catOnly:0, none:0,
+    d:{t:0,m:0,f:0,v:0,u:0,s:0,n:0,r:0,h:0}, c:{t:0,m:0,f:0,v:0,u:0,s:0,n:0,r:0,h:0}, roamUnvax:0};
+  rows.forEach(p=>{
+    for(const k in a.d){ a.d[k]+=p.d[k]; a.c[k]+=p.c[k]; }
+    a.roamUnvax+=p.roamUnvax;
+    const hd=p.d.t>0, hc=p.c.t>0;
+    if(hd) a.dogHH++; if(hc) a.catHH++;
+    if(hd&&hc) a.bothHH++; else if(hd) a.dogOnly++; else if(hc) a.catOnly++; else a.none++;
+  });
+  a.dogCov = pct(a.d.v, a.d.v+a.d.u); a.catCov = pct(a.c.v, a.c.v+a.c.u);
+  a.dogSter = pct(a.d.s, a.d.t); a.dogRoam = pct(a.d.r, a.d.r+a.d.h);
+  a.catSter = pct(a.c.s, a.c.t); a.catRoam = pct(a.c.r, a.c.r+a.c.h);
+  a.dogNeed = pct(a.d.n, a.d.t);
+  a.score = (a.d.v+a.d.u)>0 ? 100*(PRIORITY_WEIGHTS.unvax*(1-a.d.v/(a.d.v+a.d.u)) + PRIORITY_WEIGHTS.roam*((a.d.r+a.d.h)>0?a.d.r/(a.d.r+a.d.h):0) + PRIORITY_WEIGHTS.needSter*(a.d.t>0?Math.min(1,a.d.n/a.d.t):0)) : null;
+  return a;
+}
+function groupBy(rows, keyFn){ const m=new Map(); rows.forEach(p=>{ const k=keyFn(p); if(!m.has(k)) m.set(k,[]); m.get(k).push(p); }); return m; }
+function prioClass(s){ return s==null?'':s>=50?'p-hi':s>=35?'p-md':'p-lo'; }
+function prioLabel(s){ return s==null?'–':s>=50?'Tinggi':s>=35?'Sedang':'Rendah'; }
+
+/* =========================================================================
+   FILTER
+   ========================================================================= */
+function inRange(p){
+  if(F.from && (!p.date || dkey(p.date)<F.from)) return false;
+  if(F.to && (!p.date || dkey(p.date)>F.to)) return false;
+  return true;
+}
+function applyFilter(){
+  VIEW = RAW.filter(p => (!F.kec||p.kec===F.kec) && (!F.desa||p.desa===F.desa) && (!F.banjar||p.banjarId===F.banjar) && (!F.pendata||p.pendata===F.pendata) && inRange(p));
+}
+function fillSelect(el, items, allLabel, val){
+  el.innerHTML = '<option value="">'+allLabel+'</option>' + items.map(([v,l,n])=>'<option value="'+esc(v)+'"'+(v===val?' selected':'')+'>'+esc(l)+(n!=null?' ('+nf.format(n)+')':'')+'</option>').join('');
+  if(val && !items.some(x=>x[0]===val)) el.value='';
+}
+function buildFilterOptions(){
+  const cnt=(rows,k,l)=>{ const m=new Map(); rows.forEach(p=>{ const e=m.get(p[k])||[p[k],p[l],0]; e[2]++; m.set(p[k],e); }); return [...m.values()].sort((a,b)=>String(a[1]).localeCompare(String(b[1]))); };
+  fillSelect($('f-kec'), cnt(RAW,'kec','kecLabel'), 'Semua kecamatan', F.kec);
+  const r1 = RAW.filter(p=>!F.kec||p.kec===F.kec);
+  fillSelect($('f-desa'), cnt(r1,'desa','desaLabel'), 'Semua desa', F.desa);
+  if(F.desa && !r1.some(p=>p.desa===F.desa)) F.desa='';
+  const r2 = r1.filter(p=>!F.desa||p.desa===F.desa);
+  fillSelect($('f-banjar'), cnt(r2,'banjarId','banjarLabel'), 'Semua banjar', F.banjar);
+  if(F.banjar && !r2.some(p=>p.banjarId===F.banjar)) F.banjar='';
+  const pm=new Map(); r2.forEach(p=>pm.set(p.pendata,(pm.get(p.pendata)||0)+1));
+  fillSelect($('f-pendata'), [...pm.entries()].sort((a,b)=>b[1]-a[1]).map(([k,n])=>[k,k,n]), 'Semua pendata', F.pendata);
+  if(F.pendata && !pm.has(F.pendata)) F.pendata='';
+  const ds=RAW.map(p=>p.date).filter(Boolean).map(dkey).sort();
+  if(ds.length){ $('f-from').min=$('f-to').min=ds[0]; $('f-from').max=$('f-to').max=ds[ds.length-1]; }
+}
+function renderChips(){
+  const lab={kec:'Kecamatan',desa:'Desa',banjar:'Banjar',pendata:'Pendata',from:'Dari',to:'Sampai'};
+  const val=k=>{ if(k==='kec') return (RAW.find(p=>p.kec===F.kec)||{}).kecLabel; if(k==='desa') return (RAW.find(p=>p.desa===F.desa)||{}).desaLabel; if(k==='banjar') return (RAW.find(p=>p.banjarId===F.banjar)||{}).banjarLabel; if(k==='from'||k==='to') return fmtDate(parseDate(F[k])); return F[k]; };
+  $('chips').innerHTML = Object.keys(F).filter(k=>F[k]).map(k=>'<span class="chip">'+lab[k]+': '+esc(val(k))+' <button data-k="'+k+'" aria-label="hapus">×</button></span>').join('');
+}
+function setFilter(k,v){
+  F[k]=v;
+  if(k==='kec'){F.desa='';F.banjar='';}
+  if(k==='desa'){F.banjar='';}
+  update();
+}
+
+/* =========================================================================
+   CHART HELPERS
+   ========================================================================= */
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family="'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.color=COL.muted;
+Chart.defaults.plugins.datalabels.display=false;
+Chart.defaults.plugins.legend.display=false;
+Chart.defaults.maintainAspectRatio=false;
+Chart.defaults.animation.duration=450;
+Object.assign(Chart.defaults.plugins.tooltip,{backgroundColor:'#0B2433',titleColor:'#fff',bodyColor:'#DCE7EC',padding:10,cornerRadius:8,boxPadding:4,titleFont:{weight:'700'},usePointStyle:true});
+Chart.defaults.elements.bar.borderRadius=4;
+Chart.defaults.elements.bar.borderSkipped='start';
+Chart.defaults.datasets.bar.maxBarThickness=26;
+Chart.defaults.datasets.line.borderWidth=2;
+Chart.defaults.scale.grid.color=COL.grid;
+Chart.defaults.scale.border.display=false;
+
+// Garis target / referensi & label kuadran
+Chart.register({id:'refLines', afterDatasetsDraw(c,args,o){
+  const ctx=c.ctx, a=c.chartArea;
+  (o.lines||[]).forEach(L=>{
+    const s=c.scales[L.axis||'x']; if(!s) return; const px=s.getPixelForValue(L.value);
+    if(L.axis!=='y' && (px<a.left-1||px>a.right+1)) return;
+    if(L.axis==='y' && (px<a.top-1||px>a.bottom+1)) return;
+    ctx.save(); ctx.strokeStyle=L.color||COL.red; ctx.lineWidth=1.5; ctx.setLineDash(L.dash||[5,4]); ctx.beginPath();
+    if(L.axis==='y'){ctx.moveTo(a.left,px);ctx.lineTo(a.right,px);} else {ctx.moveTo(px,a.top);ctx.lineTo(px,a.bottom);}
+    ctx.stroke(); ctx.setLineDash([]);
+    if(L.label){ ctx.fillStyle=L.color||COL.red; ctx.font="700 10px 'Plus Jakarta Sans',sans-serif";
+      if(L.axis==='y'){ctx.textAlign='right';ctx.fillText(L.label,a.right-2,px-4);} else {ctx.textAlign='left';ctx.fillText(L.label,px+4,a.top+10);} }
+    ctx.restore();
+  });
+  (o.texts||[]).forEach(T=>{
+    ctx.save(); ctx.font="700 10.5px 'Plus Jakarta Sans',sans-serif"; ctx.fillStyle=T.color||'rgba(60,78,87,.55)';
+    const x=T.x==='left'?a.left+8:a.right-8, y=T.y==='top'?a.top+14:a.bottom-8; ctx.textAlign=T.x==='left'?'left':'right'; ctx.fillText(T.text,x,y); ctx.restore();
+  });
+}});
+
+function mk(id, cfg){
+  if(CH[id]){ CH[id].destroy(); delete CH[id]; }
+  const el=$(id); if(!el) return;
+  const wrap=el.parentElement; const em=wrap.querySelector('.empty'); if(em) em.remove(); el.style.display='';
+  CH[id]=new Chart(el, cfg); return CH[id];
+}
+function emptyChart(id, msg){
+  if(CH[id]){ CH[id].destroy(); delete CH[id]; }
+  const el=$(id); el.style.display='none'; const wrap=el.parentElement;
+  if(!wrap.querySelector('.empty')){ const d=document.createElement('div'); d.className='empty'; d.textContent=msg||'Belum ada data untuk filter ini.'; wrap.appendChild(d); }
+}
+const axisPct = {min:0,max:100,ticks:{callback:v=>v+'%'}};
+
+function hbar(id, labels, datasets, opts={}){
+  return mk(id,{type:'bar',data:{labels,datasets},options:Object.assign({indexAxis:'y',
+    scales:{x:Object.assign({beginAtZero:true,grid:{color:COL.grid},ticks:{callback:v=>nf.format(v)}},opts.x||{}),y:{grid:{display:false},stacked:!!opts.stacked,ticks:{color:COL.ink,autoSkip:false,font:{size:11}}}},
+    plugins:Object.assign({tooltip:opts.tooltip||{}},opts.plugins||{})},opts.extra||{})});
+}
+
+/* =========================================================================
+   RENDER: KPI
+   ========================================================================= */
+function kpiCard(o){
+  return '<div class="kpi" style="--accent:'+(o.color||COL.good)+'">'+
+    (o.badge?'<span class="badge '+o.badge[0]+'">'+o.badge[1]+'</span>':'')+
+    '<div class="lbl"><i></i>'+o.label+'</div><div class="num">'+o.value+'</div>'+
+    (o.meter!=null?'<div class="meter"><div class="fill" style="width:'+Math.min(100,o.meter)+'%"></div>'+(o.target?'<div class="target" style="left:'+o.target+'%"></div>':'')+'</div>':'')+
+    '<div class="sub">'+(o.sub||'&nbsp;')+'</div></div>';
+}
+function renderKPIs(A){
+  const T=CONFIG.VACC_TARGET;
+  const covBadge=v=>v==null?null:v>=T?['good','≥ target']:v>=T-15?['warn','di bawah target']:['bad','jauh di bawah'];
+  const desaN=new Set(VIEW.map(p=>p.desa)).size, banjarN=new Set(VIEW.map(p=>p.banjarId)).size;
+  const days=new Set(VIEW.filter(p=>p.date).map(p=>dkey(p.date))).size;
+  $('kpis').innerHTML=[
+    kpiCard({label:'Rumah Tangga Terdata',value:nf.format(A.kk),sub:'<b>'+desaN+'</b> desa · <b>'+banjarN+'</b> banjar · <b>'+days+'</b> hari kerja',color:COL.navy}),
+    kpiCard({label:'Total HPR Tercatat',value:nf.format(A.d.t+A.c.t),sub:'<b>'+nf.format(A.d.t)+'</b> anjing · <b>'+nf.format(A.c.t)+'</b> kucing',color:COL.navy}),
+    kpiCard({label:'Cakupan Vaksin Anjing',value:fmt(A.dogCov,1)+'<small>%</small>',meter:A.dogCov,target:T,badge:covBadge(A.dogCov),sub:'<b>'+nf.format(A.d.v)+'</b> sudah · <b>'+nf.format(A.d.u)+'</b> belum · target '+T+'%',color:COL.good}),
+    kpiCard({label:'Cakupan Vaksin Kucing',value:fmt(A.catCov,1)+'<small>%</small>',meter:A.catCov,target:T,badge:covBadge(A.catCov),sub:'<b>'+nf.format(A.c.v)+'</b> sudah · <b>'+nf.format(A.c.u)+'</b> belum',color:COL.cat}),
+    kpiCard({label:'Rata-rata Anjing / KK',value:A.dogHH?fmt(A.d.t/A.dogHH,2):'–',sub:'di antara <b>'+nf.format(A.dogHH)+'</b> KK pemilik anjing ('+fmtPct(pct(A.dogHH,A.kk),0)+' dari KK)',color:COL.dog}),
+    kpiCard({label:'Anjing Sudah Steril',value:fmt(A.dogSter,1)+'<small>%</small>',meter:A.dogSter,sub:'<b>'+nf.format(A.d.s)+'</b> steril · <b>'+nf.format(A.d.n)+'</b> masih butuh steril',color:COL.green}),
+    kpiCard({label:'Anjing Berkeliaran',value:fmt(A.dogRoam,1)+'<small>%</small>',meter:A.dogRoam,sub:'<b>'+nf.format(A.d.r)+'</b> ekor dilepas · <b>'+nf.format(A.d.h)+'</b> di dalam rumah',color:COL.need}),
+    kpiCard({label:'Est. Liar & Belum Vaksin',value:nf.format(Math.round(A.roamUnvax)),sub:'anjing berisiko tinggi menularkan rabies ('+fmtPct(pct(A.roamUnvax,A.d.t),1)+' populasi)',color:COL.red})
+  ].join('');
+}
+
+/* =========================================================================
+   RENDER: INSIGHTS
+   ========================================================================= */
+function renderInsights(A){
+  const T=CONFIG.VACC_TARGET, out=[];
+  if(!A.kk){ $('insights').innerHTML='<div class="empty">Tidak ada data untuk filter ini.</div>'; return; }
+  const den=A.d.v+A.d.u;
+  if(A.dogCov!=null){
+    const need=Math.max(0,Math.ceil(T/100*den - A.d.v));
+    out.push(A.dogCov>=T ? {k:'good',i:'✓',t:'Cakupan vaksin anjing '+fmtPct(A.dogCov)+' — memenuhi target '+T+'%',d:'Pertahankan dengan vaksinasi ulang tahunan dan sasar anjing baru/anak anjing.'}
+      : {k:A.dogCov>=T-15?'warn':'bad',i:'!',t:'Cakupan vaksin anjing '+fmtPct(A.dogCov)+' — di bawah target '+T+'%',d:'Dibutuhkan sekitar <b>'+nf.format(need)+'</b> anjing tambahan yang divaksin untuk mencapai '+T+'% pada wilayah terfilter.'});
+  }
+  const desaAgg=[...groupBy(VIEW,p=>p.desa).entries()].map(([k,rows])=>({k,l:rows[0].desaLabel,a:agg(rows)})).filter(x=>x.a.d.v+x.a.d.u>=10);
+  if(desaAgg.length>1){
+    desaAgg.sort((x,y)=>x.a.dogCov-y.a.dogCov);
+    const lo=desaAgg[0], hi=desaAgg[desaAgg.length-1];
+    out.push({k:'warn',i:'↓',t:'Kesenjangan antardesa: '+fmtPct(lo.a.dogCov,0)+' vs '+fmtPct(hi.a.dogCov,0),d:'Cakupan terendah di <b>'+esc(lo.l)+'</b> ('+nf.format(lo.a.d.u)+' anjing belum vaksin); tertinggi di <b>'+esc(hi.l)+'</b>.'});
+  }
+  // roaming vs vaccination
+  const roamHH=VIEW.filter(p=>p.d.r>0), homeHH=VIEW.filter(p=>p.d.t>0&&p.d.r===0);
+  const aR=agg(roamHH), aH=agg(homeHH);
+  if(aR.dogCov!=null && aH.dogCov!=null){
+    const diff=aH.dogCov-aR.dogCov;
+    out.push({k:diff>5?'bad':'info',i:'⇄',t:'Anjing berkeliaran '+(diff>0?'lebih jarang':'tidak lebih jarang')+' divaksin',d:'Cakupan vaksin di KK yang melepas anjing <b>'+fmtPct(aR.dogCov)+'</b> vs <b>'+fmtPct(aH.dogCov)+'</b> di KK yang mengandangkan. '+(diff>5?'Kelompok paling berisiko justru paling sedikit terlindungi.':'')});
+  }
+  // banjar prioritas
+  const bj=[...groupBy(VIEW,p=>p.banjarId).values()].map(rows=>({l:rows[0].banjarLabel,dl:rows[0].desaLabel,a:agg(rows)})).filter(x=>x.a.d.t>=5&&x.a.score!=null).sort((x,y)=>y.a.score-x.a.score);
+  const hi=bj.filter(x=>x.a.score>=50);
+  if(bj.length) out.push({k:hi.length?'bad':'good',i:'◎',t:hi.length+' banjar berprioritas tinggi',d:bj.length?'Skor tertinggi: <b>'+esc(bj[0].l)+'</b> ('+esc(bj[0].dl)+') — cakupan '+fmtPct(bj[0].a.dogCov,0)+', berkeliaran '+fmtPct(bj[0].a.dogRoam,0)+'.':''});
+  // cats
+  if(A.catCov!=null && A.c.t>0) out.push({k:A.catCov<T?'warn':'good',i:'🐈',t:'Vaksinasi kucing '+fmtPct(A.catCov),d:nf.format(A.c.u)+' kucing belum divaksin dari '+nf.format(A.c.t)+' tercatat di '+nf.format(A.catHH)+' KK. Kucing sering terlewat dalam program vaksinasi massal.'});
+  // sterilization
+  if(A.d.t) out.push({k:'info',i:'✂',t:nf.format(A.d.n)+' anjing membutuhkan sterilisasi',d:'Setara '+fmtPct(A.dogNeed)+' populasi anjing; hanya '+fmtPct(A.dogSter)+' yang sudah steril. Betina tercatat '+nf.format(A.d.f)+' ekor.'});
+  // concentration
+  const dogsSorted=VIEW.map(p=>p.d.t).filter(x=>x>0).sort((a,b)=>b-a);
+  if(dogsSorted.length>=10){ const top=Math.ceil(dogsSorted.length*0.1); const share=pct(dogsSorted.slice(0,top).reduce((a,b)=>a+b,0),A.d.t);
+    out.push({k:'info',i:'%',t:'10% KK teratas memelihara '+fmtPct(share,0)+' anjing',d:'Rumah tangga dengan banyak anjing (maks. '+nf.format(dogsSorted[0])+' ekor) efektif dijadikan sasaran kunjungan vaksinasi & sterilisasi.'}); }
+  // quality
+  const flagged=VIEW.filter(p=>p.flags.length).length;
+  out.push({k:pct(flagged,A.kk)>20?'warn':'good',i:'⚑',t:fmtPct(100-pct(flagged,A.kk),0)+' catatan lolos semua pemeriksaan',d:nf.format(flagged)+' catatan memiliki ≥1 tanda kualitas data. Lihat bagian <a href="#s-kualitas">Kualitas Data</a>.'});
+  // progress
+  const dated=VIEW.filter(p=>p.date); if(dated.length){ const ds=dated.map(p=>p.date.getTime()); const days=new Set(dated.map(p=>dkey(p.date))).size;
+    out.push({k:'info',i:'⏱',t:'Rata-rata '+fmt(A.kk/days,0)+' KK per hari kerja',d:'Periode '+fmtDate(new Date(Math.min(...ds)))+' – '+fmtDate(new Date(Math.max(...ds)))+' oleh '+new Set(VIEW.map(p=>p.pendata)).size+' pendata.'}); }
+  $('insights').innerHTML=out.slice(0,9).map(x=>'<div class="insight '+x.k+'"><div class="ic">'+x.i+'</div><div><div class="tt">'+x.t+'</div><div class="dd">'+x.d+'</div></div></div>').join('');
+}
+
+/* =========================================================================
+   RENDER: PETA
+   ========================================================================= */
+let MAP=null, LY={points:null,heat:null,grid:null,legend:null}, GRID_CELLS=[];
+const CELL=0.002;
+function initMap(){
+  MAP=L.map('map',{preferCanvas:true,zoomControl:true}).setView([-8.8,115.17],12);
+  const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'});
+  const light=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap © CARTO'});
+  light.addTo(MAP);
+  L.control.layers({'Peta terang':light,'OpenStreetMap':osm,'Satelit':sat},null,{position:'topright'}).addTo(MAP);
+  L.control.scale({imperial:false}).addTo(MAP);
+  LY.legend=L.control({position:'bottomleft'}); LY.legend.onAdd=()=>{ const d=L.DomUtil.create('div','map-legend-box'); d.id='map-legend'; return d; }; LY.legend.addTo(MAP);
+}
+function popupHtml(p){
+  const row=(k,v)=>'<tr><td>'+k+'</td><td><b>'+v+'</b></td></tr>';
+  return '<div class="pop"><h4>'+esc(p.kk||'(tanpa nama)')+'</h4><div class="meta">'+esc(p.banjarLabel)+', '+esc(p.desaLabel)+' · '+fmtDate(p.date)+'</div><table>'+
+    row('Status',HH_STATUS[p.hh].label)+
+    (p.d.t?row('Anjing',p.d.t+' ekor ('+p.d.v+' vaksin, '+p.d.r+' berkeliaran, '+p.d.s+' steril)'):'')+
+    (p.c.t?row('Kucing',p.c.t+' ekor ('+p.c.v+' vaksin)'):'')+
+    (Object.keys(p.ternak).length?row('Ternak',Object.entries(p.ternak).map(([k,v])=>titleCase(k)+' '+v).join(', ')):'')+
+    row('Pendata',esc(p.pendata))+(p.prec!=null?row('Presisi GPS',fmt(p.prec,0)+' m'):'')+
+    (p.flags.length?row('Catatan QC',p.flags.map(f=>QRULES[f]).join('; ')):'')+
+    '</table><a href="#" onclick="openDetail('+p.i+');return false;">Lihat detail lengkap →</a></div>';
+}
+function renderMap(){
+  if(!MAP) initMap();
+  const metric=METRICS[$('map-metric').value];
+  const pts=VIEW.filter(p=>p.lat!=null && !p.flags.includes('gps_far'));
+  ['points','heat','grid'].forEach(k=>{ if(LY[k]){ MAP.removeLayer(LY[k]); LY[k]=null; } });
+  // points
+  const cluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:40,disableClusteringAtZoom:17,spiderfyOnMaxZoom:true,showCoverageOnHover:false});
+  pts.forEach(p=>{
+    const r = p.d.t+p.c.t>0 ? Math.min(11, 4.5+Math.sqrt(p.d.t+p.c.t)*1.3) : 4;
+    const m=L.circleMarker([p.lat,p.lng],{radius:r,color:'#fff',weight:1.5,fillColor:HH_STATUS[p.hh].color,fillOpacity:.92});
+    m.bindPopup(()=>popupHtml(p),{maxWidth:320});
+    cluster.addLayer(m);
+  });
+  LY.points=cluster;
+  // heat
+  const vals=pts.map(p=>metric.get(p)).filter(v=>v>0); const vmax=Math.max(1, vals.length? vals.sort((a,b)=>a-b)[Math.floor(vals.length*0.95)] : 1);
+  LY.heat=L.heatLayer(pts.filter(p=>metric.get(p)>0).map(p=>[p.lat,p.lng,Math.min(1,metric.get(p)/vmax)]),{radius:22,blur:18,maxZoom:16,minOpacity:.25,gradient:{0.2:'#FCEBD3',0.45:'#F6C98C',0.65:'#EBA04E',0.85:'#CC7422',1:'#934C0F'}});
+  // grid
+  const cells=new Map();
+  pts.forEach(p=>{ const gx=Math.floor(p.lng/CELL), gy=Math.floor(p.lat/CELL), k=gx+'_'+gy; const c=cells.get(k)||{gx,gy,v:0,kk:0,dogs:0,unvax:0,roam:0,desa:{},banjar:{}}; c.v+=metric.get(p); c.kk++; c.dogs+=p.d.t; c.unvax+=p.d.u; c.roam+=p.d.r; c.desa[p.desaLabel]=(c.desa[p.desaLabel]||0)+1; c.banjar[p.banjarLabel]=(c.banjar[p.banjarLabel]||0)+1; cells.set(k,c); });
+  GRID_CELLS=[...cells.values()].filter(c=>c.v>0).sort((a,b)=>b.v-a.v);
+  const cmax=GRID_CELLS.length?GRID_CELLS[0].v:1;
+  const top=k=>Object.entries(k).sort((a,b)=>b[1]-a[1])[0][0];
+  const gl=L.layerGroup();
+  GRID_CELLS.forEach((c,idx)=>{
+    const t=Math.sqrt(c.v/cmax); const col=SEQ[Math.min(SEQ.length-1,Math.floor(t*SEQ.length))];
+    const b=[[c.gy*CELL,c.gx*CELL],[(c.gy+1)*CELL,(c.gx+1)*CELL]];
+    c.bounds=b; c.lblDesa=top(c.desa); c.lblBanjar=top(c.banjar);
+    L.rectangle(b,{color:col,weight:idx<10?2:0.6,opacity:idx<10?1:.6,fillColor:col,fillOpacity:.5+.3*t})
+      .bindTooltip('<b>'+(idx<10?'#'+(idx+1)+' · ':'')+esc(c.lblBanjar)+'</b>, '+esc(c.lblDesa)+'<br>'+metric.label+': <b>'+fmt(c.v,c.v%1?1:0)+'</b><br>'+c.kk+' KK · '+c.dogs+' anjing · '+c.unvax+' blm vaksin · '+c.roam+' berkeliaran',{sticky:true})
+      .addTo(gl);
+  });
+  LY.grid=gl;
+  if($('ly-grid').checked) LY.grid.addTo(MAP);
+  if($('ly-heat').checked) LY.heat.addTo(MAP);
+  if($('ly-points').checked) LY.points.addTo(MAP);
+  if(pts.length){ const b=L.latLngBounds(pts.map(p=>[p.lat,p.lng])); MAP.fitBounds(b.pad(0.05),{maxZoom:16}); }
+  // legend
+  const counts={}; VIEW.forEach(p=>counts[p.hh]=(counts[p.hh]||0)+1);
+  $('map-legend').innerHTML='<b style="font-size:11px">Status rumah tangga</b><br>'+Object.keys(HH_STATUS).filter(k=>counts[k]).map(k=>'<i style="background:'+HH_STATUS[k].color+'"></i>'+HH_STATUS[k].label+' ('+nf.format(counts[k])+')').join('<br>')+
+    '<div style="margin-top:6px"><b>'+metric.label+'</b><div class="ramp">'+SEQ.map(c=>'<span style="background:'+c+'"></span>').join('')+'</div><div style="display:flex;justify-content:space-between;width:140px;color:#6B7C84"><span>rendah</span><span>tinggi</span></div></div>';
+  const noGps=VIEW.filter(p=>p.lat==null).length, far=VIEW.filter(p=>p.flags.includes('gps_far')).length;
+  $('map-note').innerHTML=nf.format(pts.length)+' dari '+nf.format(VIEW.length)+' rumah tangga dipetakan'+(noGps?' · '+noGps+' tanpa GPS':'')+(far?' · '+far+' titik di luar wilayah disembunyikan':'')+'. Ukuran titik sebanding dengan jumlah HPR.';
+  // hotspot list
+  $('hs-note').textContent='Indikator: '+metric.label+'. Klik untuk memperbesar.';
+  $('hotspots').innerHTML = GRID_CELLS.length ? GRID_CELLS.slice(0,10).map((c,i)=>'<div class="hs" data-i="'+i+'"><div class="rk">'+(i+1)+'</div><div><div class="nm">'+esc(c.lblBanjar)+'</div><div class="ds">'+esc(c.lblDesa)+' · '+c.kk+' KK · '+c.dogs+' anjing</div></div><div class="vl">'+fmt(c.v,c.v%1?1:0)+'<small>'+metric.short+'</small></div></div>').join('') : '<div class="empty">Tidak ada titik dengan nilai indikator &gt; 0.</div>';
+}
+
+/* =========================================================================
+   RENDER: VAKSINASI
+   ========================================================================= */
+function desaAggs(){ return [...groupBy(VIEW,p=>p.desa).entries()].map(([k,rows])=>({k,l:rows[0].desaLabel,kec:rows[0].kecLabel,a:agg(rows)})); }
+function renderVaksin(){
+  const T=CONFIG.VACC_TARGET;
+  const D=desaAggs().filter(x=>x.a.d.v+x.a.d.u>0).sort((a,b)=>a.a.dogCov-b.a.dogCov);
+  if(!D.length){ ['ch-cov-desa','ch-vax-desa','ch-gap'].forEach(id=>emptyChart(id)); }
+  else{
+    const c=hbar('ch-cov-desa', D.map(x=>x.l), [{data:D.map(x=>+x.a.dogCov.toFixed(1)), backgroundColor:D.map(x=>x.a.dogCov>=T?COL.good:COL.need),
+      datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700',size:10.5},formatter:v=>fmt(v,1)+'%'}}],
+      {x:Object.assign({},axisPct,{max:100}),tooltip:{callbacks:{label:ctx=>{const a=D[ctx.dataIndex].a; return [' Cakupan: '+fmtPct(a.dogCov),' Sudah: '+nf.format(a.d.v)+' · Belum: '+nf.format(a.d.u)];}}},
+       plugins:{refLines:{lines:[{axis:'x',value:T,label:'Target '+T+'%'}]}},
+       extra:{onClick:(e,els)=>{ if(els.length){ const x=D[els[0].index]; setFilter('desa', F.desa===x.k?'':x.k); } }, onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';}, layout:{padding:{right:36}}}});
+    const D2=[...D].sort((a,b)=>(b.a.d.v+b.a.d.u)-(a.a.d.v+a.a.d.u));
+    hbar('ch-vax-desa', D2.map(x=>x.l), [
+      {label:'Sudah vaksin',data:D2.map(x=>x.a.d.v),backgroundColor:COL.good,borderColor:'#fff',borderWidth:{right:2}},
+      {label:'Belum vaksin',data:D2.map(x=>x.a.d.u),backgroundColor:COL.need,borderColor:'#fff',borderWidth:{left:0}}
+    ],{stacked:true,x:{stacked:true},tooltip:{mode:'index',callbacks:{footer:items=>{const a=D2[items[0].dataIndex].a;return 'Cakupan: '+fmtPct(a.dogCov);}}}});
+    const G=D.map(x=>({l:x.l,g:Math.max(0,Math.ceil(T/100*(x.a.d.v+x.a.d.u)-x.a.d.v))})).filter(x=>x.g>0).sort((a,b)=>b.g-a.g);
+    if(G.length) hbar('ch-gap', G.map(x=>x.l), [{data:G.map(x=>x.g),backgroundColor:COL.need,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700'},formatter:v=>nf.format(v)}}],{tooltip:{callbacks:{label:c=>' '+nf.format(c.raw)+' anjing lagi'}},extra:{layout:{padding:{right:30}}}});
+    else emptyChart('ch-gap','Semua desa sudah mencapai target 🎉');
+  }
+  // cat vaccine per desa (stacked 100)
+  const Dc=desaAggs().filter(x=>x.a.c.v+x.a.c.u>0).sort((a,b)=>b.a.catCov-a.a.catCov);
+  if(Dc.length) stack100('ch-cat-vax', Dc.map(x=>x.l), [
+      {label:'Sudah vaksin',color:COL.good,vals:Dc.map(x=>x.a.c.v)},{label:'Belum vaksin',color:COL.need,vals:Dc.map(x=>x.a.c.u)}]);
+  else emptyChart('ch-cat-vax');
+  // household profile
+  const hh={all:0,partial:0,none:0}; VIEW.forEach(p=>{ if(hh[p.hh]!=null) hh[p.hh]++; });
+  const tot=hh.all+hh.partial+hh.none;
+  if(tot) mk('ch-hh-vax',{type:'doughnut',data:{labels:['Semua sudah','Sebagian','Belum sama sekali'],datasets:[{data:[hh.all,hh.partial,hh.none],backgroundColor:[HH_STATUS.all.color,HH_STATUS.partial.color,HH_STATUS.none.color],borderColor:'#fff',borderWidth:2}]},
+    options:{cutout:'62%',plugins:{legend:{display:true,position:'right',labels:{boxWidth:10,boxHeight:10,font:{size:11},color:COL.ink,generateLabels:c=>c.data.labels.map((l,i)=>({text:l+' — '+fmtPct(pct(c.data.datasets[0].data[i],tot),0),fillStyle:c.data.datasets[0].backgroundColor[i],strokeStyle:'#fff',index:i}))}},
+      tooltip:{callbacks:{label:c=>' '+nf.format(c.raw)+' KK ('+fmtPct(pct(c.raw,tot))+')'}}}}});
+  else emptyChart('ch-hh-vax');
+  renderRisk();
+}
+function stack100(id, labels, cats, opts={}){
+  const totals=labels.map((_,i)=>cats.reduce((s,c)=>s+c.vals[i],0));
+  return hbar(id, labels, cats.map((c,ci)=>({label:c.label,data:c.vals.map((v,i)=>totals[i]?+(v/totals[i]*100).toFixed(2):0),raw:c.vals,backgroundColor:c.color,borderColor:'#fff',borderWidth:ci<cats.length-1?{right:2}:0,
+      datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]>=9,color:c.color===COL.unk?COL.ink:'#fff',font:{weight:'700',size:10.5},formatter:v=>fmt(v,0)+'%'}})),
+    {stacked:true,x:Object.assign({stacked:true},axisPct),tooltip:{mode:'index',callbacks:{label:ctx=>' '+ctx.dataset.label+': '+nf.format(ctx.dataset.raw[ctx.dataIndex])+' ('+fmt(ctx.raw,1)+'%)'}},...opts});
+}
+function banjarAggs(rows){ return [...groupBy(rows||VIEW,p=>p.banjarId).entries()].map(([k,r])=>({k,l:r[0].banjarLabel,dl:r[0].desaLabel,desa:r[0].desa,kec:r[0].kecLabel,a:agg(r),rows:r})); }
+function renderRisk(){
+  const B=banjarAggs().filter(x=>x.a.d.t>=5 && x.a.dogCov!=null && x.a.dogRoam!=null);
+  const desas=[...new Set(B.map(x=>x.desa))].sort((a,b)=>{const la=B.find(x=>x.desa===a).dl, lb=B.find(x=>x.desa===b).dl; return la.localeCompare(lb);});
+  const colorOf=d=>{ const i=desas.indexOf(d); return i<CAT.length?CAT[i]:'#9AA9B0'; };
+  const overallRoam=agg(VIEW).dogRoam;
+  if(!B.length){ emptyChart('ch-risk','Belum ada banjar dengan ≥5 anjing.'); $('risk-legend').innerHTML=''; }
+  else{
+    const maxT=Math.max(...B.map(x=>x.a.d.t));
+    mk('ch-risk',{type:'bubble',data:{datasets:desas.map(d=>({label:B.find(x=>x.desa===d).dl,data:B.filter(x=>x.desa===d).map(x=>({x:+x.a.dogCov.toFixed(1),y:+x.a.dogRoam.toFixed(1),r:4+14*Math.sqrt(x.a.d.t/maxT),b:x})),
+      backgroundColor:colorOf(d)+'B3',borderColor:'#fff',borderWidth:1.5,hoverBorderWidth:2}))},
+      options:{scales:{x:Object.assign({title:{display:true,text:'Cakupan vaksin anjing (%)',color:COL.ink,font:{weight:'700'}}},axisPct,{min:0,max:100}),y:Object.assign({title:{display:true,text:'Anjing berkeliaran (%)',color:COL.ink,font:{weight:'700'}}},axisPct,{min:0,max:100})},
+        plugins:{refLines:{lines:[{axis:'x',value:CONFIG.VACC_TARGET,label:'Target '+CONFIG.VACC_TARGET+'%'},{axis:'y',value:overallRoam,label:'Rata-rata '+fmt(overallRoam,0)+'%',color:COL.muted}],texts:[{x:'left',y:'top',text:'PRIORITAS TINGGI',color:'rgba(193,69,61,.75)'},{x:'right',y:'bottom',text:'RISIKO RENDAH',color:'rgba(46,158,107,.8)'}]},
+          tooltip:{callbacks:{title:it=>it[0].raw.b.l+' — '+it[0].raw.b.dl,label:it=>{const a=it.raw.b.a;return [' Cakupan vaksin: '+fmtPct(a.dogCov),' Berkeliaran: '+fmtPct(a.dogRoam),' Anjing: '+nf.format(a.d.t)+' di '+a.kk+' KK',' Skor prioritas: '+fmt(a.score,0)];}}}},
+        onClick:(e,els)=>{ if(els.length){ const b=CH['ch-risk'].data.datasets[els[0].datasetIndex].data[els[0].index].b; F.kec='';F.desa=b.desa;F.banjar=b.k; update(); } },
+        onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';}}});
+    $('risk-legend').innerHTML=desas.map(d=>'<span><i class="dot" style="background:'+colorOf(d)+'"></i>'+esc(B.find(x=>x.desa===d).dl)+'</span>').join('')+'<span style="color:var(--muted)">· klik gelembung untuk memfilter banjar</span>';
+  }
+  // priority table
+  const P=banjarAggs().filter(x=>x.a.d.t>=5 && x.a.score!=null);
+  const s=SORT.prio, val=x=>({score:x.a.score,cov:x.a.dogCov,roam:x.a.dogRoam,dogs:x.a.d.t,name:x.l})[s.k];
+  P.sort((a,b)=>{const va=val(a),vb=val(b); return (typeof va==='string'?va.localeCompare(vb):(va-vb))*s.d;});
+  const th=(k,l,n)=>'<th data-sort="prio:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  $('tb-priority').innerHTML='<thead><tr><th>#</th>'+th('name','Banjar')+th('dogs','Anjing',1)+th('cov','Vaksin',1)+th('roam','Liar',1)+th('score','Skor',1)+'</tr></thead><tbody>'+
+    (P.length?P.map((x,i)=>'<tr class="click" data-banjar="'+esc(x.k)+'" data-desa="'+esc(x.desa)+'"><td>'+(i+1)+'</td><td><b>'+esc(x.l)+'</b><div style="font-size:10.5px;color:var(--muted)">'+esc(x.dl)+'</div></td><td class="num">'+nf.format(x.a.d.t)+'</td><td class="num">'+fmtPct(x.a.dogCov,0)+'</td><td class="num">'+fmtPct(x.a.dogRoam,0)+'</td><td class="num"><span class="pill '+prioClass(x.a.score)+'">'+fmt(x.a.score,0)+'</span></td></tr>').join(''):'<tr><td colspan="6" class="empty">Tidak ada data</td></tr>')+'</tbody>';
+}
+
+/* =========================================================================
+   RENDER: POPULASI
+   ========================================================================= */
+function renderPopulasi(A){
+  const D=desaAggs().sort((a,b)=>(b.a.d.t+b.a.c.t)-(a.a.d.t+a.a.c.t));
+  if(D.length) mk('ch-pop-desa',{type:'bar',data:{labels:D.map(x=>x.l),datasets:[
+      {label:'Anjing',data:D.map(x=>x.a.d.t),backgroundColor:COL.dog,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:v=>nf.format(v)}},
+      {label:'Kucing',data:D.map(x=>x.a.c.t),backgroundColor:COL.cat,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:v=>nf.format(v)}}]},
+    options:{datasets:{bar:{categoryPercentage:.7,barPercentage:.9}},scales:{x:{grid:{display:false},ticks:{color:COL.ink}},y:{beginAtZero:true,grace:'10%',ticks:{callback:v=>nf.format(v)}}},layout:{padding:{top:10}},
+      plugins:{tooltip:{mode:'index',callbacks:{footer:it=>{const a=D[it[0].dataIndex].a;return a.kk+' KK · '+fmt(a.dogHH?a.d.t/a.dogHH:0,1)+' anjing/KK pemilik';}}}}}});
+  else emptyChart('ch-pop-desa');
+  // ownership
+  const own=[['Anjing saja',A.dogOnly,COL.dog],['Anjing & kucing',A.bothHH,COL.green],['Kucing saja',A.catOnly,COL.cat],['Tidak ada / 0',A.none,'#C3CDD2']].filter(x=>x[1]>0);
+  if(own.length) mk('ch-own',{type:'doughnut',data:{labels:own.map(x=>x[0]),datasets:[{data:own.map(x=>x[1]),backgroundColor:own.map(x=>x[2]),borderColor:'#fff',borderWidth:2}]},
+    options:{cutout:'60%',plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,boxHeight:10,color:COL.ink,font:{size:11},generateLabels:c=>c.data.labels.map((l,i)=>({text:l+' '+fmtPct(pct(own[i][1],A.kk),0),fillStyle:own[i][2],strokeStyle:'#fff',index:i}))}},
+      datalabels:{display:true,color:'#fff',font:{weight:'700',size:11},formatter:v=>pct(v,A.kk)>=6?nf.format(v):''},tooltip:{callbacks:{label:c=>' '+nf.format(c.raw)+' KK ('+fmtPct(pct(c.raw,A.kk))+')'}}}}});
+  else emptyChart('ch-own');
+  // histogram
+  const bins=[['1',1,1],['2',2,2],['3',3,3],['4',4,4],['5',5,5],['6–10',6,10],['11–20',11,20],['> 20',21,1e9]];
+  const H=bins.map(b=>{ const r=VIEW.filter(p=>p.d.t>=b[1]&&p.d.t<=b[2]); return {l:b[0],kk:r.length,dogs:sum(r,p=>p.d.t)}; });
+  if(A.dogHH) mk('ch-dog-hist',{type:'bar',data:{labels:H.map(h=>h.l),datasets:[{data:H.map(h=>h.kk),backgroundColor:COL.dog,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700',size:10},formatter:v=>v?nf.format(v):''}}]},
+    options:{scales:{x:{grid:{display:false},title:{display:true,text:'Jumlah anjing per rumah tangga',color:COL.ink}},y:{beginAtZero:true,grace:'12%',title:{display:true,text:'Rumah tangga'}}},
+      plugins:{tooltip:{callbacks:{title:it=>it[0].label+' anjing',label:c=>{const h=H[c.dataIndex];return [' '+nf.format(h.kk)+' KK ('+fmtPct(pct(h.kk,A.dogHH))+')',' Total '+nf.format(h.dogs)+' anjing ('+fmtPct(pct(h.dogs,A.d.t))+' populasi)'];}}}}}});
+  else emptyChart('ch-dog-hist');
+  // sex
+  const rest=(x)=>Math.max(0,x.t-x.m-x.f);
+  if(A.d.t||A.c.t) stack100('ch-sex',['Anjing','Kucing'],[{label:'Jantan',color:COL.male,vals:[A.d.m,A.c.m]},{label:'Betina',color:COL.female,vals:[A.d.f,A.c.f]},{label:'Tidak sesuai total',color:COL.unk,vals:[rest(A.d),rest(A.c)]}]);
+  else emptyChart('ch-sex');
+  // top banjar
+  const B=banjarAggs().filter(x=>x.a.d.t>0).sort((a,b)=>b.a.d.t-a.a.d.t).slice(0,20);
+  if(B.length) mk('ch-banjar-top',{type:'bar',data:{labels:B.map(x=>x.l),datasets:[
+      {label:'Sudah vaksin',data:B.map(x=>x.a.d.v),backgroundColor:COL.good,stack:'s'},
+      {label:'Belum vaksin',data:B.map(x=>x.a.d.u),backgroundColor:COL.need,stack:'s',datalabels:{display:ctx=>ctx.chart.width>640,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:(v,ctx)=>nf.format(B[ctx.dataIndex].a.d.t)}}]},
+    options:{scales:{x:{stacked:true,grid:{display:false},ticks:{color:COL.ink,autoSkip:false,maxRotation:50,minRotation:35,font:{size:10.5}}},y:{stacked:true,beginAtZero:true,grace:'10%'}},layout:{padding:{top:12}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,color:COL.ink}},tooltip:{mode:'index',callbacks:{title:it=>{const x=B[it[0].dataIndex];return x.l+' — '+x.dl;},footer:it=>{const a=B[it[0].dataIndex].a;return a.d.t+' anjing · '+a.kk+' KK · '+fmt(a.dogHH?a.d.t/a.dogHH:0,1)+' anjing/KK · cakupan '+fmtPct(a.dogCov,0);}}}}}});
+  else emptyChart('ch-banjar-top');
+}
+
+/* =========================================================================
+   RENDER: STERIL & PEMELIHARAAN
+   ========================================================================= */
+function renderSteril(A){
+  const other=x=>Math.max(0,x.t-x.s-x.n);
+  if(A.d.t||A.c.t){
+    stack100('ch-ster',['Anjing','Kucing'],[{label:'Sudah steril',color:COL.good,vals:[A.d.s,A.c.s]},{label:'Butuh sterilisasi',color:COL.need,vals:[A.d.n,A.c.n]},{label:'Tidak terkategori',color:COL.unk,vals:[other(A.d),other(A.c)]}]);
+    const ko=x=>Math.max(0,x.t-x.r-x.h);
+    stack100('ch-keep',['Anjing','Kucing'],[{label:'Di dalam rumah',color:COL.good,vals:[A.d.h,A.c.h]},{label:'Berkeliaran',color:COL.need,vals:[A.d.r,A.c.r]},{label:'Tidak sesuai total',color:COL.unk,vals:[ko(A.d),ko(A.c)]}]);
+  } else { emptyChart('ch-ster'); emptyChart('ch-keep'); }
+  const D=desaAggs().filter(x=>x.a.d.t>0).sort((a,b)=>b.a.dogRoam-a.a.dogRoam);
+  if(D.length) mk('ch-ster-desa',{type:'bar',data:{labels:D.map(x=>x.l),datasets:[
+      {label:'% sudah steril',data:D.map(x=>+(x.a.dogSter||0).toFixed(1)),backgroundColor:COL.good,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:v=>fmt(v,0)+'%'}},
+      {label:'% berkeliaran',data:D.map(x=>+(x.a.dogRoam||0).toFixed(1)),backgroundColor:COL.need,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:v=>fmt(v,0)+'%'}}]},
+    options:{indexAxis:'y',datasets:{bar:{categoryPercentage:.75,barPercentage:.9}},scales:{x:Object.assign({},axisPct,{max:100}),y:{grid:{display:false},ticks:{color:COL.ink}}},layout:{padding:{right:30}},
+      plugins:{tooltip:{mode:'index',callbacks:{footer:it=>{const a=D[it[0].dataIndex].a;return nf.format(a.d.s)+' steril · '+nf.format(a.d.r)+' berkeliaran dari '+nf.format(a.d.t)+' anjing';}}}}}});
+  else emptyChart('ch-ster-desa');
+  // cross
+  const groups=[['KK melepas anjing',VIEW.filter(p=>p.d.r>0)],['KK mengandangkan semua',VIEW.filter(p=>p.d.t>0&&p.d.r===0)],['KK anjing sudah steril (≥1)',VIEW.filter(p=>p.d.s>0)],['KK belum ada yang steril',VIEW.filter(p=>p.d.t>0&&p.d.s===0)]].map(([l,r])=>({l,a:agg(r)})).filter(g=>g.a.d.t>0);
+  if(groups.length) mk('ch-cross',{type:'bar',data:{labels:groups.map(g=>g.l),datasets:[
+      {label:'Cakupan vaksin',data:groups.map(g=>+(g.a.dogCov||0).toFixed(1)),backgroundColor:COL.good,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:v=>fmt(v,0)+'%'}},
+      {label:'Cakupan steril',data:groups.map(g=>+(g.a.dogSter||0).toFixed(1)),backgroundColor:COL.green,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{size:10,weight:'700'},formatter:v=>fmt(v,0)+'%'}}]},
+    options:{datasets:{bar:{categoryPercentage:.65,barPercentage:.9}},scales:{x:{grid:{display:false},ticks:{color:COL.ink,font:{size:10.5}}},y:Object.assign({},axisPct,{max:110,ticks:{callback:v=>v<=100?v+'%':''}})},
+      plugins:{refLines:{lines:[{axis:'y',value:CONFIG.VACC_TARGET,label:'Target vaksin '+CONFIG.VACC_TARGET+'%'}]},tooltip:{mode:'index',callbacks:{footer:it=>{const a=groups[it[0].dataIndex].a;return a.kk+' KK · '+nf.format(a.d.t)+' anjing';}}}}}});
+  else emptyChart('ch-cross');
+}
+
+/* =========================================================================
+   RENDER: TERNAK
+   ========================================================================= */
+function renderTernak(){
+  const rows=TERNAK.map(t=>{ const r=VIEW.filter(p=>p.ternak[t]!=null); const vals=r.map(p=>p.ternak[t]).filter(v=>v>0); return {t,kk:r.length,total:sum(vals,v=>v),med:median(vals),max:vals.length?Math.max(...vals):null}; });
+  const none=VIEW.filter(p=>!Object.keys(p.ternak).length).length;
+  const any=VIEW.length-none;
+  const R=rows.filter(r=>r.kk>0).sort((a,b)=>b.kk-a.kk);
+  if(R.length) hbar('ch-ternak',R.map(r=>titleCase(r.t)),[{data:R.map(r=>r.kk),backgroundColor:COL.green,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700'},formatter:v=>nf.format(v)+' KK ('+fmt(pct(v,VIEW.length),1)+'%)'}}],
+    {tooltip:{callbacks:{label:c=>' '+nf.format(c.raw)+' rumah tangga'}},extra:{layout:{padding:{right:90}}}});
+  else emptyChart('ch-ternak','Tidak ada rumah tangga yang memelihara ternak.');
+  $('tb-ternak').innerHTML='<thead><tr><th>Jenis</th><th class="num">KK pemilik</th><th class="num">% dari KK</th><th class="num">Total ekor</th><th class="num">Median / KK</th><th class="num">Maks</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td><b>'+titleCase(r.t)+'</b></td><td class="num">'+nf.format(r.kk)+'</td><td class="num">'+fmtPct(pct(r.kk,VIEW.length))+'</td><td class="num">'+nf.format(r.total)+'</td><td class="num">'+(r.med==null?'–':fmt(r.med,r.med%1?1:0))+'</td><td class="num">'+(r.max==null?'–':nf.format(r.max))+'</td></tr>').join('')+
+    '<tr style="background:#F6F9FA"><td><b>Memelihara ternak (jenis apa pun)</b></td><td class="num"><b>'+nf.format(any)+'</b></td><td class="num"><b>'+fmtPct(pct(any,VIEW.length))+'</b></td><td colspan="3"></td></tr></tbody>';
+}
+
+/* =========================================================================
+   RENDER: AKTIVITAS
+   ========================================================================= */
+function renderAktivitas(){
+  const dated=VIEW.filter(p=>p.date);
+  if(dated.length){
+    const m=new Map(); dated.forEach(p=>{const k=dkey(p.date); m.set(k,(m.get(k)||0)+1);});
+    const keys=[...m.keys()].sort(); const vals=keys.map(k=>m.get(k)); let c=0; const cum=vals.map(v=>c+=v);
+    const labels=keys.map(k=>{const d=parseDate(k);return DAYS[d.getDay()]+' '+fmtDateShort(d);});
+    const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+    if(trendMode==='daily'){
+      mk('ch-trend',{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:COL.good,datalabels:{display:vals.length<=31,anchor:'end',align:'end',color:COL.ink,font:{size:9.5,weight:'700'},formatter:v=>nf.format(v)}}]},
+        options:{scales:{x:{grid:{display:false},ticks:{maxRotation:60,minRotation:0,autoSkip:true,font:{size:10}}},y:{beginAtZero:true,grace:'12%'}},layout:{padding:{top:8}},
+          plugins:{refLines:{lines:[{axis:'y',value:avg,label:'Rata-rata '+fmt(avg,0)+'/hari',color:COL.muted}]},tooltip:{callbacks:{label:c=>' '+nf.format(c.raw)+' KK didata'}}}}});
+      $('trend-note').textContent='Rumah tangga terdata per tanggal kunjungan ('+keys.length+' hari kerja).';
+    } else {
+      mk('ch-trend',{type:'line',data:{labels,datasets:[{data:cum,borderColor:COL.good,backgroundColor:'rgba(15,127,168,.10)',fill:true,tension:.25,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:COL.good,pointBorderColor:'#fff',pointBorderWidth:1.5}]},
+        options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:60,font:{size:10}}},y:{beginAtZero:true,ticks:{callback:v=>nf.format(v)}}},
+          plugins:{tooltip:{callbacks:{label:c=>' Kumulatif: '+nf.format(c.raw)+' KK'}},datalabels:{display:ctx=>ctx.dataIndex===cum.length-1,align:'top',anchor:'end',color:COL.navy,font:{weight:'800'},formatter:v=>nf.format(v)}}}});
+      $('trend-note').textContent='Total kumulatif rumah tangga terdata.';
+    }
+  } else emptyChart('ch-trend');
+  const hrs=VIEW.filter(p=>p.hour!=null);
+  if(hrs.length){
+    const lo=Math.min(...hrs.map(p=>p.hour)), hi=Math.max(...hrs.map(p=>p.hour)); const H=[]; for(let h=lo;h<=hi;h++) H.push(h);
+    const cnt=H.map(h=>hrs.filter(p=>p.hour===h).length);
+    mk('ch-hour',{type:'bar',data:{labels:H.map(h=>String(h).padStart(2,'0')+':00'),datasets:[{data:cnt,backgroundColor:COL.navy}]},
+      options:{scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true}},plugins:{tooltip:{callbacks:{title:it=>'Pukul '+it[0].label,label:c=>' '+nf.format(c.raw)+' form ('+fmtPct(pct(c.raw,hrs.length))+')'}}}}});
+  } else emptyChart('ch-hour');
+  // enumerators
+  const E=[...groupBy(VIEW,p=>p.pendata).entries()].map(([k,r])=>{ const gps=r.filter(p=>p.lat!=null); return {k,kk:r.length,days:new Set(r.filter(p=>p.date).map(p=>dkey(p.date))).size,
+    dur:median(r.map(p=>p.dur).filter(v=>v!=null&&v<180)),gpsOk:pct(gps.filter(p=>p.prec==null||p.prec<=CONFIG.GPS_PRECISION_OK).length,r.length),flag:pct(r.filter(p=>p.flags.length).length,r.length),
+    dogs:sum(r,p=>p.d.t),cats:sum(r,p=>p.c.t),desa:[...new Set(r.map(p=>p.desaLabel))].join(', ')}; });
+  E.forEach(e=>e.perDay=e.days?e.kk/e.days:null);
+  const top=[...E].sort((a,b)=>b.kk-a.kk).slice(0,15);
+  if(top.length) hbar('ch-enum',top.map(e=>e.k),[{data:top.map(e=>e.kk),backgroundColor:COL.good,datalabels:{display:true,anchor:'end',align:'end',color:COL.ink,font:{weight:'700',size:10},formatter:v=>nf.format(v)}}],
+    {tooltip:{callbacks:{label:c=>{const e=top[c.dataIndex];return [' '+e.kk+' KK dalam '+e.days+' hari',' '+e.dogs+' anjing · '+e.cats+' kucing',' Desa: '+e.desa];}}},extra:{layout:{padding:{right:30}},onClick:(e,els)=>{ if(els.length) setFilter('pendata', top[els[0].index].k); }}});
+  else emptyChart('ch-enum');
+  const s=SORT.enum; E.sort((a,b)=>{const va=a[s.k],vb=b[s.k]; if(typeof va==='string') return va.localeCompare(vb)*s.d; return ((va==null?-1:va)-(vb==null?-1:vb))*s.d;});
+  const th=(k,l,n)=>'<th data-sort="enum:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  $('tb-enum').innerHTML='<thead><tr>'+th('k','Pendata')+th('kk','KK',1)+th('days','Hari',1)+th('perDay','KK/hari',1)+th('dur','Median durasi',1)+th('gpsOk','GPS baik',1)+th('flag','Bertanda QC',1)+th('dogs','Anjing',1)+th('desa','Desa')+'</tr></thead><tbody>'+
+    E.map(e=>'<tr class="click" data-pendata="'+esc(e.k)+'"><td><b>'+esc(e.k)+'</b></td><td class="num">'+e.kk+'</td><td class="num">'+e.days+'</td><td class="num">'+fmt(e.perDay,1)+'</td><td class="num">'+(e.dur==null?'–':fmt(e.dur,1)+' mnt')+'</td><td class="num">'+fmtPct(e.gpsOk,0)+'</td><td class="num">'+(e.flag>30?'<span class="pill p-md">'+fmtPct(e.flag,0)+'</span>':fmtPct(e.flag,0))+'</td><td class="num">'+nf.format(e.dogs)+'</td><td style="color:var(--muted);font-size:11px;white-space:normal;min-width:150px;max-width:240px">'+esc(e.desa)+'</td></tr>').join('')+'</tbody>';
+}
+
+/* =========================================================================
+   RENDER: KUALITAS
+   ========================================================================= */
+function renderQuality(){
+  const n=VIEW.length; const clean=VIEW.filter(p=>!p.flags.length).length;
+  const cards=[['','Semua catatan bertanda',n-clean]].concat(Object.keys(QRULES).map(k=>[k,QRULES[k],VIEW.filter(p=>p.flags.includes(k)).length]));
+  $('q-grid').innerHTML='<div class="q" style="cursor:default;background:#F4FAF6;border-color:#CDE9D9"><div class="n" style="color:#1E6B48">'+fmtPct(pct(clean,n),1)+'</div><div class="l">Skor kualitas</div><div class="p">'+nf.format(clean)+' dari '+nf.format(n)+' catatan bersih</div></div>'+
+    cards.map(([k,l,c])=>'<div class="q'+(qRule===k?' on':'')+'" data-q="'+k+'"><div class="n">'+nf.format(c)+'</div><div class="l">'+l+'</div><div class="p">'+fmtPct(pct(c,n),1)+'</div></div>').join('');
+  const rows=VIEW.filter(p=>qRule?p.flags.includes(qRule):p.flags.length);
+  $('q-title').textContent=qRule?('Catatan: '+QRULES[qRule]):'Semua catatan yang perlu diverifikasi';
+  $('q-info').textContent=nf.format(rows.length)+' catatan';
+  const per=25, pages=Math.max(1,Math.ceil(rows.length/per)); qPage=Math.min(qPage,pages-1);
+  const slice=rows.slice(qPage*per,(qPage+1)*per);
+  $('tb-quality').innerHTML='<thead><tr><th>ID</th><th>Tanggal</th><th>Pendata</th><th>Kepala Keluarga</th><th>Banjar</th><th>Desa</th><th class="num">Anjing</th><th class="num">Kucing</th><th>Masalah</th></tr></thead><tbody>'+
+    (slice.length?slice.map(p=>'<tr class="click" data-i="'+p.i+'"><td>'+esc(p.id)+'</td><td>'+fmtDate(p.date)+'</td><td>'+esc(p.pendata)+'</td><td>'+esc(p.kk)+'</td><td>'+esc(p.banjarLabel)+'</td><td>'+esc(p.desaLabel)+'</td><td class="num">'+p.d.t+'</td><td class="num">'+p.c.t+'</td><td style="white-space:normal">'+p.flags.map(f=>'<span class="flag">'+QRULES[f]+'</span>').join('')+'</td></tr>').join(''):'<tr><td colspan="9" class="empty">Tidak ada catatan bermasalah 🎉</td></tr>')+'</tbody>';
+  pager('q-pager',qPage,pages,v=>{qPage=v;renderQuality();});
+  $('q-export').onclick=()=>downloadCSV('racon_qc_'+(qRule||'semua')+'.csv',['ID','Tanggal','Pendata','Kepala Keluarga','Banjar','Desa','Kecamatan','Lat','Lng','Presisi GPS','Anjing','Kucing','Masalah'],
+    rows.map(p=>[p.id,dkey(p.date),p.pendata,p.kk,p.banjarLabel,p.desaLabel,p.kecLabel,p.lat,p.lng,p.prec,p.d.t,p.c.t,p.flags.map(f=>QRULES[f]).join('; ')]));
+}
+function pager(id,page,pages,go){
+  const el=$(id); if(pages<=1){el.innerHTML='';return;}
+  el.innerHTML='<button class="btn outline sm" '+(page<=0?'disabled':'')+' data-p="'+(page-1)+'">‹ Sebelumnya</button><span>Hal. '+(page+1)+' / '+pages+'</span><button class="btn outline sm" '+(page>=pages-1?'disabled':'')+' data-p="'+(page+1)+'">Berikutnya ›</button>';
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>go(+b.dataset.p));
+}
+
+/* =========================================================================
+   RENDER: REKAP BANJAR
+   ========================================================================= */
+function renderBanjar(){
+  const q=normKey($('bj-search').value||'');
+  let B=banjarAggs().map(x=>({k:x.k,desa:x.desa,name:x.l,dl:x.dl,kec:x.kec,kk:x.a.kk,dogs:x.a.d.t,cats:x.a.c.t,dpk:x.a.dogHH?x.a.d.t/x.a.dogHH:null,cov:x.a.dogCov,ccov:x.a.catCov,ster:x.a.dogSter,roam:x.a.dogRoam,need:x.a.d.n,ru:x.a.roamUnvax,score:x.a.d.t>=5?x.a.score:null,a:x.a}));
+  if(q) B=B.filter(x=>normKey(x.name+x.dl+x.kec).includes(q));
+  const s=SORT.banjar; B.sort((a,b)=>{const va=a[s.k],vb=b[s.k]; if(typeof va==='string') return va.localeCompare(vb)*s.d; return ((va==null?-1:va)-(vb==null?-1:vb))*s.d;});
+  const th=(k,l,n)=>'<th data-sort="banjar:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  const bar=(v,c,tg)=>v==null?'–':'<div class="barcell">'+fmt(v,0)+'%<div class="b"><span style="width:'+Math.min(100,v)+'%;background:'+c+'"></span>'+(tg?'<i class="tg"></i>':'')+'</div></div>';
+  $('tb-banjar').innerHTML='<thead><tr>'+th('name','Banjar')+th('dl','Desa')+th('kk','KK',1)+th('dogs','Anjing',1)+th('cats','Kucing',1)+th('dpk','Anjing/KK',1)+th('cov','Vaksin anjing',1)+th('ccov','Vaksin kucing',1)+th('ster','Steril',1)+th('roam','Berkeliaran',1)+th('ru','Est. liar blm vaksin',1)+th('score','Prioritas',1)+'</tr></thead><tbody>'+
+    B.map(x=>'<tr class="click" data-banjar="'+esc(x.k)+'" data-desa="'+esc(x.desa)+'"><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.dl)+'</td><td class="num">'+nf.format(x.kk)+'</td><td class="num">'+nf.format(x.dogs)+'</td><td class="num">'+nf.format(x.cats)+'</td><td class="num">'+fmt(x.dpk,1)+'</td><td class="num">'+bar(x.cov,x.cov>=CONFIG.VACC_TARGET?COL.good:COL.need,1)+'</td><td class="num">'+bar(x.ccov,COL.cat)+'</td><td class="num">'+bar(x.ster,COL.green)+'</td><td class="num">'+bar(x.roam,COL.need)+'</td><td class="num">'+fmt(x.ru,1)+'</td><td class="num">'+(x.score==null?'<span style="color:var(--muted)">n&lt;5</span>':'<span class="pill '+prioClass(x.score)+'">'+fmt(x.score,0)+' · '+prioLabel(x.score)+'</span>')+'</td></tr>').join('')+'</tbody>';
+  $('bj-info').textContent=nf.format(B.length)+' banjar';
+  $('bj-export').onclick=()=>downloadCSV('racon_rekap_banjar.csv',['Banjar','Desa','Kecamatan','KK','Anjing','Kucing','Anjing per KK pemilik','Anjing sudah vaksin','Anjing belum vaksin','Cakupan vaksin anjing %','Cakupan vaksin kucing %','Anjing steril %','Anjing butuh steril','Anjing berkeliaran %','Est. liar belum vaksin','Skor prioritas'],
+    B.map(x=>[x.name,x.dl,x.kec,x.kk,x.dogs,x.cats,x.dpk==null?'':x.dpk.toFixed(2),x.a.d.v,x.a.d.u,x.cov==null?'':x.cov.toFixed(1),x.ccov==null?'':x.ccov.toFixed(1),x.ster==null?'':x.ster.toFixed(1),x.need,x.roam==null?'':x.roam.toFixed(1),x.ru.toFixed(1),x.score==null?'':x.score.toFixed(0)]));
+}
+
+/* =========================================================================
+   RENDER: DATA MENTAH
+   ========================================================================= */
+function renderRaw(){
+  const q=($('raw-search').value||'').toLowerCase().trim();
+  let R=q?VIEW.filter(p=>(p.kk+' '+p.banjarLabel+' '+p.desaLabel+' '+p.pendata+' '+p.perum+' '+p.id).toLowerCase().includes(q)):[...VIEW];
+  const s=SORT.raw; const g={date:p=>p.date?p.date.getTime():0,id:p=>+p.id||0,kk:p=>p.kk,banjar:p=>p.banjarLabel,desa:p=>p.desaLabel,pendata:p=>p.pendata,dogs:p=>p.d.t,cats:p=>p.c.t,vax:p=>p.d.v,roam:p=>p.d.r,ster:p=>p.d.s}[s.k];
+  R.sort((a,b)=>{const va=g(a),vb=g(b); return (typeof va==='string'?va.localeCompare(vb):va-vb)*s.d;});
+  const per=30, pages=Math.max(1,Math.ceil(R.length/per)); rawPage=Math.min(rawPage,pages-1);
+  const th=(k,l,n)=>'<th data-sort="raw:'+k+'" class="'+(n?'num':'')+'">'+l+(s.k===k?'<span class="ar">'+(s.d>0?'▲':'▼')+'</span>':'')+'</th>';
+  $('tb-raw').innerHTML='<thead><tr>'+th('id','ID')+th('date','Tanggal')+th('kk','Kepala Keluarga')+th('banjar','Banjar')+th('desa','Desa')+th('pendata','Pendata')+th('dogs','Anjing',1)+th('vax','Vaksin',1)+th('roam','Liar',1)+th('ster','Steril',1)+th('cats','Kucing',1)+'<th>Ternak</th><th>Status</th></tr></thead><tbody>'+
+    R.slice(rawPage*per,(rawPage+1)*per).map(p=>'<tr class="click" data-i="'+p.i+'"><td>'+esc(p.id)+'</td><td>'+fmtDate(p.date)+'</td><td><b>'+esc(p.kk)+'</b></td><td>'+esc(p.banjarLabel)+'</td><td>'+esc(p.desaLabel)+'</td><td>'+esc(p.pendata)+'</td><td class="num">'+p.d.t+'</td><td class="num">'+p.d.v+'</td><td class="num">'+p.d.r+'</td><td class="num">'+p.d.s+'</td><td class="num">'+p.c.t+'</td><td>'+(Object.keys(p.ternak).map(titleCase).join(', ')||'–')+'</td><td><span class="legend" style="margin:0"><span><i class="dot" style="background:'+HH_STATUS[p.hh].color+'"></i>'+(p.flags.length?'<span class="flag">'+p.flags.length+' QC</span>':'')+'</span></span></td></tr>').join('')+'</tbody>';
+  $('raw-info').textContent=nf.format(R.length)+' catatan';
+  pager('raw-pager',rawPage,pages,v=>{rawPage=v;renderRaw();});
+  $('raw-export').onclick=()=>downloadCSV('racon_data_terfilter.csv',
+    ['ID','Tanggal','Pendata','Kepala Keluarga','Perumahan','Kecamatan','Desa','Banjar','Lat','Lng','Presisi GPS','Anjing','Anjing jantan','Anjing betina','Anjing sudah vaksin','Anjing belum vaksin','Anjing steril','Anjing butuh steril','Anjing berkeliaran','Anjing di rumah','Kucing','Kucing jantan','Kucing betina','Kucing sudah vaksin','Kucing belum vaksin','Kucing steril','Kucing butuh steril','Kucing berkeliaran','Kucing di rumah',...TERNAK.map(t=>'Jumlah '+t),'Status KK','Catatan QC'],
+    R.map(p=>[p.id,dkey(p.date),p.pendata,p.kk,p.perum,p.kecLabel,p.desaLabel,p.banjarLabel,p.lat,p.lng,p.prec,p.d.t,p.d.m,p.d.f,p.d.v,p.d.u,p.d.s,p.d.n,p.d.r,p.d.h,p.c.t,p.c.m,p.c.f,p.c.v,p.c.u,p.c.s,p.c.n,p.c.r,p.c.h,...TERNAK.map(t=>p.ternak[t]==null?'':p.ternak[t]),HH_STATUS[p.hh].label,p.flags.map(f=>QRULES[f]).join('; ')]));
+}
+
+/* =========================================================================
+   DETAIL MODAL
+   ========================================================================= */
+function openDetail(i){
+  const p=RAW[i]; if(!p) return;
+  const r=(k,v)=>'<dt>'+k+'</dt><dd>'+(v==null||v===''?'–':v)+'</dd>';
+  const an=(a,lbl)=>'<div class="sep">'+lbl+'</div>'+r('Total',a.t)+r('Jantan / betina',a.m+' / '+a.f)+r('Sudah / belum vaksin',a.v+' / '+a.u)+r('Sudah steril / butuh steril',a.s+' / '+a.n)+r('Berkeliaran / di dalam rumah',a.r+' / '+a.h);
+  $('modal-body').innerHTML='<button class="x" onclick="closeModal()">×</button><h3>'+esc(p.kk||'(tanpa nama)')+'</h3><div style="color:var(--muted);font-size:12px">'+esc(p.banjarLabel)+', '+esc(p.desaLabel)+', '+esc(p.kecLabel)+'</div><dl class="dl">'+
+    '<div class="sep">Kunjungan</div>'+r('ID',esc(p.id))+r('Tanggal kunjungan',fmtDate(p.date))+r('Pendata',esc(p.pendata))+r('Durasi pengisian',p.dur==null?null:fmt(p.dur,1)+' menit')+r('Perumahan',esc(p.perum))+
+    r('Koordinat',p.lat!=null?p.lat.toFixed(6)+', '+p.lng.toFixed(6)+' <a target="_blank" rel="noopener" href="https://www.google.com/maps?q='+p.lat+','+p.lng+'">buka peta ↗</a>':null)+r('Presisi GPS',p.prec!=null?fmt(p.prec,0)+' m':null)+
+    r('Status vaksinasi KK','<span class="legend" style="margin:0"><span><i class="dot" style="background:'+HH_STATUS[p.hh].color+'"></i>'+HH_STATUS[p.hh].label+'</span></span>')+
+    (p.d.t||p.hasDogSel?an(p.d,'Anjing'):'')+(p.c.t||p.hasCatSel?an(p.c,'Kucing'):'')+
+    '<div class="sep">Ternak</div>'+(Object.keys(p.ternak).length?Object.entries(p.ternak).map(([k,v])=>r(titleCase(k),v+' ekor')).join(''):r('Ternak','Tidak memelihara'))+
+    (p.flags.length?'<div class="sep">Catatan kualitas data</div><dd style="grid-column:1/-1">'+p.flags.map(f=>'<span class="flag">'+QRULES[f]+'</span>').join('')+'</dd>':'')+'</dl>';
+  $('modal').classList.add('show');
+}
+function closeModal(){ $('modal').classList.remove('show'); }
+
+/* =========================================================================
+   UPDATE
+   ========================================================================= */
+function update(){
+  buildFilterOptions(); applyFilter(); renderChips();
+  const A=agg(VIEW);
+  renderKPIs(A); renderInsights(A);
+  try{ renderMap(); }catch(e){ console.error('map',e); }
+  renderVaksin(); renderPopulasi(A); renderSteril(A); renderTernak(); renderAktivitas(); renderQuality(); renderBanjar(); renderRaw();
+}
+
+/* =========================================================================
+   LOAD DATA
+   ========================================================================= */
+function setStatus(state,text){ $('sync-dot').className='sync-dot '+(state||''); $('sync-text').textContent=text; }
+function showOverlay(html){ $('ov-card').innerHTML=html; $('overlay').classList.add('show'); }
+function hideOverlay(){ $('overlay').classList.remove('show'); }
+function tableToObjects(headers, rows){ return rows.map(r=>{ const o={}; headers.forEach((h,i)=>o[h]=r[i]); return o; }); }
+
+function jsonp(url){
+  return new Promise((res,rej)=>{
+    const cb='__racon_cb_'+Date.now(); const s=document.createElement('script');
+    const t=setTimeout(()=>{cleanup();rej(new Error('Timeout JSONP'));},60000);
+    function cleanup(){ clearTimeout(t); delete window[cb]; s.remove(); }
+    window[cb]=d=>{cleanup();res(d);}; s.onerror=()=>{cleanup();rej(new Error('Gagal memuat skrip JSONP'));};
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb; document.body.appendChild(s);
+  });
+}
+let syncing=false;
+async function syncFromSheet(force){
+  if(syncing) return; syncing=true;
+  setStatus('busy','Mengambil data dari Google Spreadsheet…');
+  $('btn-refresh').querySelector('svg').classList.add('spin');
+  const qs='sheet='+encodeURIComponent(CONFIG.SHEET_NAME)+(CONFIG.API_KEY?'&key='+encodeURIComponent(CONFIG.API_KEY):'')+(force?'&nocache=1':'')+'&t='+Date.now();
+  const base=endpoint(); const url=base+(base.includes('?')?'&':'?')+qs;
+  try{
+    let data;
+    try{ const res=await fetch(url,{redirect:'follow',cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); data=await res.json(); }
+    catch(e){ data=await jsonp(url); }
+    if(!data || !data.ok) throw new Error((data&&data.error)||'Respons tidak valid');
+    RAW=normalizeRows(tableToObjects(data.headers,data.rows));
+    SOURCE={type:'sheet',label:'Google Spreadsheet Pendataan Hewan',meta:data.meta};
+    hideOverlay(); update();
+    const t=new Date();
+    setStatus('ok','Tersinkron '+t.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+' · '+nf.format(RAW.length)+' catatan'+(data.meta&&data.meta.cached?' (cache)':''));
+    updateSourceInfo();
+  }catch(err){
+    setStatus('err', RAW.length ? 'Gagal memperbarui — menampilkan data terakhir' : 'Data belum dapat dimuat');
+    if(!RAW.length) showOverlay('<h2>Data belum dapat dimuat</h2><p>Koneksi ke server data sedang bermasalah atau internet terputus. Silakan coba beberapa saat lagi.</p><p><button class="btn primary" onclick="showOverlay(\'<div class=&quot;loader&quot;><div class=&quot;ring&quot;></div>Memuat data…</div>\');syncFromSheet(true)">Coba lagi</button></p>');
+  }finally{ syncing=false; $('btn-refresh').querySelector('svg').classList.remove('spin'); }
+}
+function updateSourceInfo(){
+  const m=SOURCE.meta||{};
+  $('src-info').innerHTML=esc(SOURCE.label)+(m.spreadsheetUpdatedAt?' · spreadsheet terakhir diubah '+esc(m.spreadsheetUpdatedAt.replace('T',' ')):'')+' · '+nf.format(RAW.length)+' catatan dimuat.'+(CONFIG.AUTO_REFRESH_MIN?' Sinkron otomatis tiap '+CONFIG.AUTO_REFRESH_MIN+' menit.':'');
+  $('foot-time').textContent='Dimuat '+new Date().toLocaleString('id-ID');
+}
+/* =========================================================================
+   EVENTS
+   ========================================================================= */
+$('f-kec').onchange=e=>setFilter('kec',e.target.value);
+$('f-desa').onchange=e=>setFilter('desa',e.target.value);
+$('f-banjar').onchange=e=>setFilter('banjar',e.target.value);
+$('f-pendata').onchange=e=>setFilter('pendata',e.target.value);
+$('f-from').onchange=e=>setFilter('from',e.target.value);
+$('f-to').onchange=e=>setFilter('to',e.target.value);
+$('btn-reset').onclick=()=>{ Object.keys(F).forEach(k=>F[k]=''); $('f-from').value=$('f-to').value=''; update(); };
+$('chips').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; const k=b.dataset.k; if(k==='from'||k==='to') $('f-'+k).value=''; setFilter(k,''); };
+$('btn-refresh').onclick=()=>syncFromSheet(true);
+['ly-points','ly-heat','ly-grid'].forEach(id=>$(id).onchange=()=>{ const k=id.slice(3); if(!LY[k]) return; if($(id).checked) LY[k].addTo(MAP); else MAP.removeLayer(LY[k]); });
+$('map-metric').onchange=()=>renderMap();
+$('hotspots').onclick=e=>{ const h=e.target.closest('.hs'); if(!h) return; const c=GRID_CELLS[+h.dataset.i]; MAP.fitBounds(c.bounds,{maxZoom:18,padding:[60,60]}); $('map').scrollIntoView({behavior:'smooth',block:'center'}); };
+$('seg-trend').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; trendMode=b.dataset.v; [...$('seg-trend').children].forEach(x=>x.classList.toggle('on',x===b)); renderAktivitas(); };
+$('q-grid').onclick=e=>{ const q=e.target.closest('.q[data-q]'); if(!q) return; qRule=q.dataset.q===qRule?'':q.dataset.q; qPage=0; renderQuality(); };
+$('bj-search').oninput=()=>renderBanjar();
+$('raw-search').oninput=()=>{rawPage=0;renderRaw();};
+document.addEventListener('click',e=>{
+  const th=e.target.closest('th[data-sort]');
+  if(th){ const [t,k]=th.dataset.sort.split(':'); const s=SORT[t]; if(s.k===k) s.d*=-1; else {s.k=k; s.d=(['name','dl','k','desa','kk','banjar','pendata'].includes(k)&&t!=='enum')||k==='name'||k==='dl'||k==='k'?1:-1;}
+    ({prio:renderRisk,enum:renderAktivitas,banjar:renderBanjar,raw:renderRaw})[t](); return; }
+  const tr=e.target.closest('tr.click');
+  if(tr){ if(tr.dataset.i!=null) openDetail(+tr.dataset.i); else if(tr.dataset.banjar){ F.kec='';F.desa=tr.dataset.desa;F.banjar=tr.dataset.banjar; update(); window.scrollTo({top:0,behavior:'smooth'}); } else if(tr.dataset.pendata){ setFilter('pendata',tr.dataset.pendata); window.scrollTo({top:0,behavior:'smooth'}); } }
+});
+$('modal').onclick=e=>{ if(e.target.id==='modal') closeModal(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+// nav highlight
+const secs=[...document.querySelectorAll('.nav a')].map(a=>[a,document.querySelector(a.getAttribute('href'))]);
+window.addEventListener('scroll',()=>{ let cur=secs[0][0]; secs.forEach(([a,s])=>{ if(s && s.getBoundingClientRect().top<140) cur=a; }); secs.forEach(([a])=>a.classList.toggle('active',a===cur)); },{passive:true});
+
+/* =========================================================================
+   START
+   ========================================================================= */
+showOverlay('<div class="loader"><div class="ring"></div>Memuat data…</div>');
+syncFromSheet(false);
+if(CONFIG.AUTO_REFRESH_MIN>0) setInterval(()=>{ if(!document.hidden) syncFromSheet(false); }, CONFIG.AUTO_REFRESH_MIN*60000);
+</script>
+</body>
+</html>
